@@ -16,11 +16,15 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { useLanguage } from '../context/LanguageContext'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 const SettingsDropdown = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const { language, toggleLanguage, languages } = useLanguage()
+  const navigate = useNavigate()
   const dropdownRef = useRef(null)
   const [activeSection, setActiveSection] = useState(null)
   const [passwordForm, setPasswordForm] = useState({
@@ -117,7 +121,8 @@ const SettingsDropdown = ({ isOpen, onClose }) => {
       title: 'Mi Perfil',
       description: `${user?.nombre} ${user?.apellido} - ${user?.cargo}`,
       action: () => {
-        toast.info('Vista de perfil en desarrollo', { duration: 2000 })
+        onClose()
+        navigate('/perfil')
       }
     },
     {
@@ -155,11 +160,12 @@ const SettingsDropdown = ({ isOpen, onClose }) => {
       id: 'language',
       icon: Globe,
       title: 'Idioma',
-      description: 'Español (Ecuador)',
+      description: `${languages[language]?.name} ${languages[language]?.flag}`,
       action: () => {
-        toast.info('Sistema en Español', { 
-          icon: '🇪🇨',
-          duration: 2000 
+        toggleLanguage()
+        const newLang = language === 'es' ? 'en' : 'es'
+        toast.success(`${languages[newLang]?.flag} Idioma cambiado a ${languages[newLang]?.name}`, {
+          duration: 2000
         })
       }
     },

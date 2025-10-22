@@ -13,6 +13,7 @@ import Asistencia from '../pages/Asistencia/Asistencia'
 import RecetaList from '../pages/Recetas/RecetaList'
 import SignosVitales from '../pages/Enfermeria/SignosVitales'
 import ConsultaMedica from '../pages/Consulta/ConsultaMedica'
+import MiPerfil from '../pages/Perfil/MiPerfil'
 import Error404 from '../pages/Error404'
 
 // Componente para proteger rutas
@@ -29,6 +30,7 @@ const AppRouter = () => {
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
       
       <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+      <Route path="/perfil" element={<PrivateRoute><MiPerfil /></PrivateRoute>} />
       <Route path="/asistencia" element={<PrivateRoute><Asistencia /></PrivateRoute>} />
       <Route path="/pacientes" element={<PrivateRoute><PacienteList /></PrivateRoute>} />
       <Route path="/pacientes/nuevo" element={<PrivateRoute><PacienteForm /></PrivateRoute>} />
