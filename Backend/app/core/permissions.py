@@ -42,47 +42,78 @@ def require_role(allowed_roles: list):
     return role_checker
 
 # Funciones helper para roles específicos
-def admin_only(current_user: dict = Depends(get_current_user)):
-    """Solo administradores"""
-    if current_user["cargo"] not in ["Administrador"]:
+def super_admin_only(current_user: dict = Depends(get_current_user)):
+    """Solo Admin General (acceso total al sistema)"""
+    if current_user["cargo"] not in ["Admin General"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requiere rol de Administrador"
+            detail="Se requiere rol de Admin General"
+        )
+    return current_user
+
+def admin_only(current_user: dict = Depends(get_current_user)):
+    """Solo Admin General o Administradores (recepcionistas)"""
+    if current_user["cargo"] not in ["Admin General", "Administrador"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol de Admin General o Administrador"
         )
     return current_user
 
 def admin_or_medic(current_user: dict = Depends(get_current_user)):
-    """Administradores o Médicos"""
-    if current_user["cargo"] not in ["Administrador", "Medico"]:
+    """Admin General, Administradores o Médicos"""
+    if current_user["cargo"] not in ["Admin General", "Administrador", "Medico"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requiere rol de Administrador o Médico"
+            detail="Se requiere rol de Admin General, Administrador o Médico"
         )
     return current_user
 
 def admin_or_nurse(current_user: dict = Depends(get_current_user)):
-    """Administradores o Enfermeras"""
-    if current_user["cargo"] not in ["Administrador", "Enfermera"]:
+    """Admin General, Administradores o Enfermeras"""
+    if current_user["cargo"] not in ["Admin General", "Administrador", "Enfermera"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requiere rol de Administrador o Enfermera"
+            detail="Se requiere rol de Admin General, Administrador o Enfermera"
         )
     return current_user
 
 def admin_or_pharmacist(current_user: dict = Depends(get_current_user)):
-    """Administradores o Farmacéuticos"""
-    if current_user["cargo"] not in ["Administrador", "Farmaceutico"]:
+    """Admin General, Administradores o Farmacéuticos"""
+    if current_user["cargo"] not in ["Admin General", "Administrador", "Farmaceutico"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requiere rol de Administrador o Farmacéutico"
+            detail="Se requiere rol de Admin General, Administrador o Farmacéutico"
         )
     return current_user
 
 def medical_staff(current_user: dict = Depends(get_current_user)):
-    """Personal médico (Admin, Médico, Enfermera)"""
-    if current_user["cargo"] not in ["Administrador", "Medico", "Enfermera"]:
+    """Personal médico (Admin General, Admin, Médico, Enfermera)"""
+    if current_user["cargo"] not in ["Admin General", "Administrador", "Medico", "Enfermera"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Se requiere rol de personal médico"
         )
+    return current_user
+
+def nurse_only(current_user: dict = Depends(get_current_user)):
+    """Solo Admin General o Enfermeras (para signos vitales)"""
+    if current_user["cargo"] not in ["Admin General", "Enfermera"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol de Enfermera o Admin General"
+        )
+    return current_user
+
+def medical_consultation_only(current_user: dict = Depends(get_current_user)):
+    """Solo Admin General o Médicos (para consultas médicas)"""
+    if current_user["cargo"] not in ["Admin General", "Medico"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol de Médico o Admin General"
+        )
+    return current_user
+
+def any_authenticated(current_user: dict = Depends(get_current_user)):
+    """Cualquier usuario autenticado (Admin General tiene acceso automático)"""
     return current_user

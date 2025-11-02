@@ -5,7 +5,13 @@ from app.core.database import Base
 class Empleado(Base):
     """
     Modelo base para empleados del sistema médico.
-    Tipos de cargo: 'Médico', 'Enfermera', 'Farmacéutico', 'Administrador'
+    Tipos de cargo: 'Admin General', 'Administrador', 'Médico', 'Enfermera', 'Farmacéutico'
+    
+    - Admin General: Acceso total al sistema, gestión de usuarios y configuración
+    - Administrador: Recepcionista, gestión de citas y pacientes
+    - Médico: Consultas médicas y recetas
+    - Enfermera: Signos vitales y asistencia
+    - Farmacéutico: Gestión de medicamentos y recetas
     """
     __tablename__ = "empleados"
 
@@ -13,7 +19,7 @@ class Empleado(Base):
     nombre = Column(String(100), nullable=False)
     apellido = Column(String(100), nullable=False)
     cedula = Column(BigInteger, unique=True, nullable=False)
-    cargo = Column(String(50), nullable=False)  # Médico, Enfermera, Farmacéutico, Administrador
+    cargo = Column(String(50), nullable=False)  # Admin General, Administrador, Médico, Enfermera, Farmacéutico
     email = Column(String(150), unique=True, nullable=True)
     telefono = Column(String(20), nullable=True)
     hashed_password = Column(String(255), nullable=True)

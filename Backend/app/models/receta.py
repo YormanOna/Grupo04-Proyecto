@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -21,6 +21,9 @@ class Receta(Base):
     dispensada_por = Column(Integer, ForeignKey("empleados.id"), nullable=True)  # Farmacéutico
     fecha_dispensacion = Column(DateTime, nullable=True)
     observaciones = Column(Text, nullable=True)
+    # Información detallada de dispensación (RF-002)
+    lote = Column(String(50), nullable=True)  # Número de lote del medicamento
+    fecha_vencimiento = Column(Date, nullable=True)  # Fecha de vencimiento del medicamento
 
     # Relaciones
     consulta = relationship("Consulta", foreign_keys=[consulta_id])

@@ -13,9 +13,17 @@ engine = create_engine(DATABASE_URL, pool_pre_ping=True, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+def get_db():
+    """Dependency para obtener sesión de base de datos"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 def init_db():
     # Import models here so they are registered with Base.metadata
-    from app.models import empleado, paciente, medico, cita, historia, consulta, farmacia, medicamento, signos_vitales, asistencia, receta, encuesta
+    from app.models import empleado, paciente, medico, cita, historia, consulta, farmacia, medicamento, signos_vitales, asistencia, receta, encuesta, auditoria
     try:
         Base.metadata.create_all(bind=engine)
         print("Database tables created or already exist.")

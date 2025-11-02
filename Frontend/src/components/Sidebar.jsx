@@ -11,7 +11,9 @@ import {
   ChevronRight,
   Stethoscope,
   Clock,
-  FileText
+  FileText,
+  Shield,
+  UserCog
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
@@ -21,6 +23,7 @@ const Sidebar = () => {
   const { user } = useAuth()
 
   // Definir roles
+  const isSuperAdmin = user?.cargo === 'Admin General'
   const isAdmin = user?.cargo === 'Administrador'
   const isMedic = user?.cargo === 'Medico'
   const isNurse = user?.cargo === 'Enfermera'
@@ -35,7 +38,7 @@ const Sidebar = () => {
       gradient: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
-      roles: ['Administrador', 'Medico', 'Enfermera', 'Farmaceutico'] // Todos
+      roles: ['Admin General', 'Administrador', 'Medico', 'Enfermera', 'Farmaceutico'] // Todos
     },
     { 
       path: '/asistencia', 
@@ -44,7 +47,7 @@ const Sidebar = () => {
       gradient: 'from-indigo-500 to-indigo-600',
       bgColor: 'bg-indigo-50',
       textColor: 'text-indigo-600',
-      roles: ['Administrador', 'Medico', 'Enfermera', 'Farmaceutico'] // Todos
+      roles: ['Admin General', 'Administrador', 'Medico', 'Enfermera', 'Farmaceutico'] // Todos
     },
     { 
       path: '/pacientes', 
@@ -53,16 +56,25 @@ const Sidebar = () => {
       gradient: 'from-green-500 to-green-600',
       bgColor: 'bg-green-50',
       textColor: 'text-green-600',
-      roles: ['Administrador', 'Medico', 'Enfermera'] // Solo personal médico
+      roles: ['Admin General', 'Administrador', 'Medico', 'Enfermera'] // Enfermera solo lectura
     },
     { 
       path: '/citas', 
       icon: Calendar, 
-      label: 'Citas', 
+      label: 'Citas del Día', 
       gradient: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-600',
-      roles: ['Administrador', 'Medico', 'Enfermera'] // Solo personal médico
+      roles: ['Admin General', 'Administrador', 'Medico', 'Enfermera'] // Enfermera ve citas para toma de signos vitales
+    },
+    { 
+      path: '/citas/calendario', 
+      icon: Calendar, 
+      label: 'Calendario', 
+      gradient: 'from-violet-500 to-purple-600',
+      bgColor: 'bg-violet-50',
+      textColor: 'text-violet-600',
+      roles: ['Admin General', 'Administrador', 'Medico'] // Solo Admin, recepción y médicos (NO enfermera)
     },
     { 
       path: '/medicos', 
@@ -71,7 +83,7 @@ const Sidebar = () => {
       gradient: 'from-cyan-500 to-cyan-600',
       bgColor: 'bg-cyan-50',
       textColor: 'text-cyan-600',
-      roles: ['Administrador', 'Medico', 'Enfermera'] // Solo personal médico
+      roles: ['Admin General', 'Administrador'] // Solo Admin General y recepcionistas (gestión administrativa)
     },
     { 
       path: '/enfermeria/signos-vitales', 
@@ -80,7 +92,7 @@ const Sidebar = () => {
       gradient: 'from-emerald-500 to-emerald-600',
       bgColor: 'bg-emerald-50',
       textColor: 'text-emerald-600',
-      roles: ['Administrador', 'Enfermera'] // Solo enfermeras
+      roles: ['Admin General', 'Enfermera'] // Solo Admin General y enfermeras
     },
     { 
       path: '/consulta-medica', 
@@ -89,25 +101,52 @@ const Sidebar = () => {
       gradient: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
-      roles: ['Administrador', 'Medico'] // Solo médicos
+      roles: ['Admin General', 'Medico'] // Solo Admin General y médicos
+    },
+    { 
+      path: '/expediente', 
+      icon: FileText, 
+      label: 'Expediente Clínico', 
+      gradient: 'from-teal-500 to-teal-600',
+      bgColor: 'bg-teal-50',
+      textColor: 'text-teal-600',
+      roles: ['Admin General', 'Administrador', 'Medico', 'Enfermera', 'Farmaceutico'] // Todos - filtrado por rol en backend
     },
     { 
       path: '/recetas', 
-      icon: FileText, 
+      icon: Pill, 
       label: 'Recetas', 
       gradient: 'from-pink-500 to-pink-600',
       bgColor: 'bg-pink-50',
       textColor: 'text-pink-600',
-      roles: ['Administrador', 'Medico', 'Farmaceutico'] // Médicos y farmacia
+      roles: ['Admin General', 'Medico', 'Farmaceutico'] // Solo Admin General, médicos y farmacia
     },
     { 
       path: '/farmacia', 
-      icon: Pill, 
+      icon: Activity, 
       label: 'Farmacia', 
       gradient: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-50',
       textColor: 'text-orange-600',
-      roles: ['Administrador', 'Farmaceutico'] // Solo admin y farmacéutico
+      roles: ['Admin General', 'Farmaceutico'] // Solo Admin General y farmacéutico
+    },
+    { 
+      path: '/admin/empleados', 
+      icon: UserCog, 
+      label: 'Gestión de Usuarios', 
+      gradient: 'from-blue-600 to-indigo-600',
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-700',
+      roles: ['Admin General'] // Solo Admin General (superadmin)
+    },
+    { 
+      path: '/admin/auditoria', 
+      icon: Shield, 
+      label: 'Auditoría', 
+      gradient: 'from-purple-600 to-pink-600',
+      bgColor: 'bg-purple-50',
+      textColor: 'text-purple-700',
+      roles: ['Admin General'] // Solo Admin General (superadmin)
     },
   ]
 
@@ -120,33 +159,39 @@ const Sidebar = () => {
 
   return (
     <aside 
-      className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shadow-xl relative ${
-        isCollapsed ? 'w-20' : 'w-72'
+      className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 shadow-xl relative ${
+        isCollapsed ? 'w-24' : 'w-72'
       }`}
     >
       {/* Header del Sidebar */}
-      <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-500 to-cyan-500">
-        {!isCollapsed && (
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
-              <Stethoscope className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="font-bold text-white text-xl">MediCare+</h2>
-              <p className="text-xs text-white/80">Sistema Médico</p>
-            </div>
-          </div>
-        )}
+      <div className={`border-b border-gray-200 dark:border-gray-700 flex items-center bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-600 dark:to-cyan-600 ${
+        isCollapsed ? 'justify-center p-4' : 'justify-between p-6'
+      }`}>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 hover:bg-white/20 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/30"
+          className={`flex items-center transition-all duration-200 ${
+            isCollapsed ? 'justify-center hover:scale-110 w-full' : 'space-x-3'
+          }`}
+          title={isCollapsed ? 'Abrir menú' : ''}
         >
-          {isCollapsed ? (
-            <ChevronRight className="w-5 h-5 text-white" />
-          ) : (
-            <ChevronLeft className="w-5 h-5 text-white" />
-          )}
+          <div className={`bg-white rounded-xl flex items-center justify-center shadow-lg transition-all duration-200 ${
+            isCollapsed ? 'w-10 h-10 p-1.5 hover:shadow-xl mx-auto' : 'w-14 h-14 p-2'
+          }`}>
+            <img 
+              src="/Images/logo.png" 
+              alt="Logo" 
+              className="w-full h-full object-contain"
+            />
+          </div>
         </button>
+        {!isCollapsed && (
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 hover:bg-white/20 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/30"
+          >
+            <ChevronLeft className="w-5 h-5 text-white" />
+          </button>
+        )}
       </div>
 
       {/* Menú de navegación */}
@@ -160,22 +205,24 @@ const Sidebar = () => {
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                  className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3.5'} rounded-xl transition-all duration-200 group relative overflow-hidden ${
                     active
-                      ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg scale-105`
-                      : `${item.bgColor} ${item.textColor} hover:scale-105 hover:shadow-md`
+                      ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg ${isCollapsed ? 'scale-110' : 'scale-105'}`
+                      : `${item.bgColor} ${item.textColor} hover:scale-110 hover:shadow-xl hover:brightness-95`
                   }`}
                   title={isCollapsed ? item.label : ''}
                 >
-                  {/* Efecto de brillo en hover */}
+                  {/* Efecto de brillo en hover - solo cuando NO está activo */}
                   {!active && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r ${item.gradient}`}
+                      style={{ mixBlendMode: 'soft-light' }}
+                    ></div>
                   )}
                   
                   <Icon 
-                    className={`w-5 h-5 ${
+                    className={`${isCollapsed ? 'w-7 h-7' : 'w-5 h-5'} ${
                       active ? 'text-white' : ''
-                    } group-hover:scale-110 transition-transform relative z-10`} 
+                    } group-hover:scale-125 transition-transform relative z-10 drop-shadow-sm`} 
                   />
                   {!isCollapsed && (
                     <span className={`font-semibold relative z-10 ${active ? 'text-white' : ''}`}>
@@ -191,27 +238,6 @@ const Sidebar = () => {
           })}
         </ul>
       </nav>
-
-      {/* Footer del Sidebar */}
-      {!isCollapsed && (
-        <div className="p-4 border-t border-gray-200 bg-gradient-to-br from-gray-50 to-white">
-          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Activity className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-bold text-gray-800">Estado del Sistema</h3>
-                <p className="text-xs text-gray-600">Todos los servicios activos</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">Uptime</span>
-              <span className="font-bold text-green-600">99.9%</span>
-            </div>
-          </div>
-        </div>
-      )}
     </aside>
   )
 }

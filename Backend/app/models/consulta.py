@@ -21,7 +21,8 @@ class Consulta(Base):
     motivo_consulta = Column(Text, nullable=True)  # Por qué vino el paciente
     enfermedad_actual = Column(Text, nullable=True)  # Historia de enfermedad actual
     examen_fisico = Column(Text, nullable=True)  # Hallazgos del examen físico
-    diagnostico = Column(String(255), nullable=True)  # Diagnóstico principal
+    diagnostico = Column(String(255), nullable=True)  # Diagnóstico principal (descripción)
+    diagnostico_codigo = Column(String(10), nullable=True)  # Código CIE-10 del diagnóstico principal
     diagnosticos_secundarios = Column(Text, nullable=True)  # Otros diagnósticos
     tratamiento = Column(Text, nullable=True)  # Plan de tratamiento
     indicaciones = Column(Text, nullable=True)  # Indicaciones médicas

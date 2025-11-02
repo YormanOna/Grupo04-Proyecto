@@ -11,7 +11,7 @@ const RecetaList = () => {
   const [loading, setLoading] = useState(false)
 
   const isFarmaceutico = user?.cargo === 'Farmaceutico'
-  const isAdmin = user?.cargo === 'Administrador'
+  const isAdmin = user?.cargo === 'Administrador' || user?.cargo === 'Admin General'
 
   useEffect(() => {
     loadRecetas()

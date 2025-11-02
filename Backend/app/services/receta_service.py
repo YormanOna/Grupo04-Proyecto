@@ -43,7 +43,7 @@ def obtener_receta(db: Session, receta_id: int):
 
 def dispensar_receta(db: Session, receta_id: int, farmaceutico_id: int, payload: RecetaDispensar):
     """
-    Marca una receta como dispensada
+    Marca una receta como dispensada (RF-002: con lote y fecha de vencimiento)
     """
     receta = obtener_receta(db, receta_id)
     if not receta:
@@ -52,8 +52,21 @@ def dispensar_receta(db: Session, receta_id: int, farmaceutico_id: int, payload:
     receta.estado = payload.estado
     receta.dispensada_por = farmaceutico_id
     receta.fecha_dispensacion = datetime.utcnow()
+    
     if payload.observaciones:
         receta.observaciones = payload.observaciones
+    
+    # RF-002: Registrar lote y fecha de vencimiento
+    if payload.lote:
+        receta.lote = payload.lote
+    
+    if payload.fecha_vencimiento:
+        # Convertir string a date si es necesario
+        from datetime import datetime as dt
+        if isinstance(payload.fecha_vencimiento, str):
+            receta.fecha_vencimiento = dt.strptime(payload.fecha_vencimiento, '%Y-%m-%d').date()
+        else:
+            receta.fecha_vencimiento = payload.fecha_vencimiento
     
     db.commit()
     db.refresh(receta)

@@ -25,6 +25,12 @@ class Paciente(Base):
     contacto_emergencia_telefono = Column(String(20), nullable=True)
     contacto_emergencia_relacion = Column(String(50), nullable=True)
     
+    # Información de afiliación médica (RF-001)
+    tipo_seguro = Column(String(100), nullable=True)  # Público, Privado, IESS, Seguro privado
+    aseguradora = Column(String(200), nullable=True)  # Nombre de la aseguradora
+    numero_poliza = Column(String(100), nullable=True)  # Número de póliza o carnet
+    fecha_vigencia_poliza = Column(Date, nullable=True)  # Fecha hasta la cual es válida la póliza
+    
     @hybrid_property
     def edad(self):
         """Calcula la edad del paciente basada en fecha_nacimiento"""

@@ -27,3 +27,18 @@ def list_medicamentos(db: Session):
 
 def get_medicamento(db: Session, med_id: int):
     return db.query(Medicamento).filter(Medicamento.id == med_id).first()
+
+def buscar_medicamentos(db: Session, query: str, limit: int = 20):
+    """
+    Busca medicamentos por nombre con stock disponible
+    RF-003: Autocomplete para prescripción
+    """
+    if not query or len(query) < 2:
+        return []
+    
+    search_pattern = f"%{query}%"
+    
+    return db.query(Medicamento).filter(
+        Medicamento.nombre.ilike(search_pattern),
+        Medicamento.stock > 0  # Solo medicamentos disponibles
+    ).limit(limit).all()

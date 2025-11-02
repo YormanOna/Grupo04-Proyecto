@@ -19,5 +19,8 @@ class Medico(Base):
     # Si se quiere relacionar con Empleado (herencia)
     empleado_id = Column(Integer, ForeignKey("empleados.id"), nullable=True)
     
+    # Relación con Empleado (bidireccional)
+    empleado = relationship("Empleado", foreign_keys=[empleado_id])
+    
     # Relación con Citas (1 Médico -> N Citas)
     citas = relationship("Cita", back_populates="medico", cascade="all, delete-orphan")

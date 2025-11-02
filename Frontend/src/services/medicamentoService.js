@@ -25,10 +25,18 @@ export const deleteMedicamento = async (id) => {
   return res.data
 }
 
+// RF-003: Búsqueda de medicamentos para autocomplete
+export const buscarMedicamentos = async (query, limit = 20) => {
+  if (!query || query.length < 2) return []
+  const res = await api.get(`/medicamentos/buscar?query=${encodeURIComponent(query)}&limit=${limit}`)
+  return res.data
+}
+
 export default {
   getMedicamentos,
   getMedicamento,
   createMedicamento,
   updateMedicamento,
-  deleteMedicamento
+  deleteMedicamento,
+  buscarMedicamentos
 }

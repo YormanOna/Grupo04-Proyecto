@@ -32,8 +32,13 @@ class CitaOut(CitaBase):
     medico_id: Optional[int] = None
     encargado_id: Optional[int] = None
     observaciones_cancelacion: Optional[str] = None
-    paciente: Optional[dict] = None  # Datos del paciente anidados
-    medico: Optional[dict] = None  # Datos del médico anidados
+    # Campos opcionales para información adicional (sin validación estricta)
+    paciente_nombre: Optional[str] = None
+    paciente_apellido: Optional[str] = None
+    paciente_cedula: Optional[str] = None
+    medico_nombre: Optional[str] = None
+    medico_apellido: Optional[str] = None
+    medico_especialidad: Optional[str] = None
 
     class Config:
         orm_mode = True

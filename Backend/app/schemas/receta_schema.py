@@ -21,6 +21,8 @@ class RecetaOut(RecetaBase):
     dispensada_por: Optional[int]
     fecha_dispensacion: Optional[datetime]
     observaciones: Optional[str]
+    lote: Optional[str]
+    fecha_vencimiento: Optional[datetime]
 
     class Config:
         orm_mode = True
@@ -29,3 +31,5 @@ class RecetaDispensar(BaseModel):
     """Schema para dispensar receta"""
     observaciones: Optional[str] = None
     estado: str = "dispensada"  # dispensada, parcial
+    lote: Optional[str] = None  # Número de lote del medicamento
+    fecha_vencimiento: Optional[str] = None  # Fecha de vencimiento (YYYY-MM-DD)

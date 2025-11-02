@@ -35,6 +35,18 @@ const consultaService = {
   // Completar consulta
   completar: async (id, data) => {
     return await api.post(`/consultas/${id}/completar`, data);
+  },
+
+  // RF-003: Generar comprobante de asistencia
+  generarComprobante: async (consultaId, enviarEmail = false) => {
+    const response = await api.post(
+      `/consultas/${consultaId}/comprobante?enviar_email_paciente=${enviarEmail}`,
+      {},
+      {
+        responseType: 'blob' // Para recibir el PDF como blob
+      }
+    );
+    return response;
   }
 };
 

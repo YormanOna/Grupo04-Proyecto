@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     SMTP_USER: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None
     EMAIL_FROM: Optional[str] = None
+    
+    # Resend API Configuration
+    RESEND_API_KEY: Optional[str] = None
+    USE_RESEND: Optional[bool] = False
 
     class Config:
         env_file = ".env"

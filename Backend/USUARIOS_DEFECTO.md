@@ -4,11 +4,25 @@ Al iniciar la aplicación, se crean automáticamente los siguientes usuarios si 
 
 ## 🔑 Credenciales de Acceso
 
-### 👨‍💼 Administrador
+### ⭐ Admin General (Super Administrador)
+- **Email:** `superadmin@hospital.com`
+- **Contraseña:** `superadmin123`
+- **Cargo:** Admin General
+- **Cédula:** 1111111111
+- **Permisos:** ⭐ **ACCESO TOTAL** - Gestión completa del sistema, usuarios, configuración y todos los módulos
+
+### ‍💼 Administrador (Recepcionista)
 - **Email:** `admin@hospital.com`
 - **Contraseña:** `admin123`
 - **Cargo:** Administrador
 - **Cédula:** 1234567890
+- **Permisos:** 
+  * ✅ Dashboard (visualización general)
+  * ✅ Asistencia (control de entrada/salida)
+  * ✅ Registro y gestión de pacientes
+  * ✅ Agendamiento de citas (RF-001)
+  * ✅ Visualización de calendario de citas
+  * ❌ NO tiene acceso a: Consultas médicas, Recetas, Farmacia, Signos Vitales, Gestión de Médicos
 
 ### 👨‍⚕️ Médico
 - **Email:** `medico@hospital.com`
@@ -21,6 +35,14 @@ Al iniciar la aplicación, se crean automáticamente los siguientes usuarios si 
 - **Contraseña:** `enfer123`
 - **Cargo:** Enfermera
 - **Cédula:** 5555555555
+- **Permisos:**
+  * ✅ Dashboard (visualización de estadísticas)
+  * ✅ Asistencia (registro de entrada/salida personal)
+  * ✅ Pacientes (solo lectura - no puede crear, editar o eliminar)
+  * ✅ **Citas del Día** (solo lectura - para saber qué pacientes atender)
+  * ✅ **Signos Vitales** (su función principal - registro desde la lista de citas)
+  * ✅ Perfil personal
+  * ❌ NO tiene acceso a: Crear/Editar/Cancelar Citas, Calendario de Citas, Médicos (gestión), Consultas Médicas, Recetas, Farmacia
 
 ### 💊 Farmacéutico
 - **Email:** `farmacia@hospital.com`

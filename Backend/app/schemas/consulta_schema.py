@@ -8,6 +8,7 @@ class ConsultaBase(BaseModel):
     enfermedad_actual: Optional[str] = None
     examen_fisico: Optional[str] = None
     diagnostico: Optional[str] = None
+    diagnostico_codigo: Optional[str] = None  # Código CIE-10
     diagnosticos_secundarios: Optional[str] = None
     tratamiento: Optional[str] = None
     indicaciones: Optional[str] = None

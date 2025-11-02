@@ -7,23 +7,18 @@ import {
   Bell,
   Moon,
   Sun,
-  Globe,
-  Shield,
-  HelpCircle,
   LogOut,
   ChevronRight,
   AlertCircle
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
-import { useLanguage } from '../context/LanguageContext'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 const SettingsDropdown = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const { language, toggleLanguage, languages } = useLanguage()
   const navigate = useNavigate()
   const dropdownRef = useRef(null)
   const [activeSection, setActiveSection] = useState(null)
@@ -136,11 +131,16 @@ const SettingsDropdown = ({ isOpen, onClose }) => {
       id: 'theme',
       icon: theme === 'dark' ? Moon : Sun,
       title: 'Tema de Interfaz',
-      description: `Modo ${theme === 'dark' ? 'oscuro' : 'claro'} activo`,
+      description: `Modo ${theme === 'dark' ? 'Oscuro 🌙' : 'Claro ☀️'} activo`,
       action: () => {
         toggleTheme()
-        toast.success(`✨ Tema ${theme === 'dark' ? 'claro' : 'oscuro'} activado`, {
-          icon: theme === 'dark' ? '☀️' : '🌙'
+        toast.success(`✨ Tema ${theme === 'dark' ? 'Claro' : 'Oscuro'} activado`, {
+          icon: theme === 'dark' ? '☀️' : '🌙',
+          duration: 2000,
+          style: {
+            background: theme === 'dark' ? '#f9fafb' : '#1f2937',
+            color: theme === 'dark' ? '#111827' : '#f9fafb',
+          }
         })
       }
     },
@@ -153,31 +153,6 @@ const SettingsDropdown = ({ isOpen, onClose }) => {
         toast.success('Notificaciones activadas', { 
           icon: '🔔',
           duration: 2000 
-        })
-      }
-    },
-    {
-      id: 'language',
-      icon: Globe,
-      title: 'Idioma',
-      description: `${languages[language]?.name} ${languages[language]?.flag}`,
-      action: () => {
-        toggleLanguage()
-        const newLang = language === 'es' ? 'en' : 'es'
-        toast.success(`${languages[newLang]?.flag} Idioma cambiado a ${languages[newLang]?.name}`, {
-          duration: 2000
-        })
-      }
-    },
-    {
-      id: 'help',
-      icon: HelpCircle,
-      title: 'Ayuda y Soporte',
-      description: 'Documentación y asistencia',
-      action: () => {
-        toast.info('Centro de ayuda disponible en el menú principal', { 
-          icon: '📚',
-          duration: 3000 
         })
       }
     }
@@ -351,10 +326,10 @@ const SettingsDropdown = ({ isOpen, onClose }) => {
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-slideDown"
+      className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-slideDown"
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 px-5 py-4">
+      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-700 dark:to-cyan-700 px-5 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Settings className="w-5 h-5 text-white" />
@@ -370,44 +345,47 @@ const SettingsDropdown = ({ isOpen, onClose }) => {
       </div>
 
       {/* User Info */}
-      <div className="px-5 py-4 bg-gradient-to-br from-blue-50 to-cyan-50 border-b border-gray-200">
+      <div className="px-5 py-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-700 dark:to-gray-750 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
             {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
           </div>
           <div className="flex-1">
-            <p className="text-base font-semibold text-gray-800">
+            <p className="text-base font-semibold text-gray-800 dark:text-white">
               {user?.nombre} {user?.apellido}
             </p>
-            <p className="text-sm text-gray-600">{user?.email}</p>
-            <p className="text-xs text-blue-600 font-medium mt-1">{user?.cargo}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{user?.email}</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1">{user?.cargo}</p>
           </div>
         </div>
       </div>
 
       {/* Settings Menu */}
-      <div className="max-h-96 overflow-y-auto">
+      <div className="max-h-96 overflow-y-auto bg-white dark:bg-gray-800">
         {menuItems.map((item) => {
           const IconComponent = item.icon
+          const isThemeItem = item.id === 'theme'
           return (
             <button
               key={item.id}
               onClick={item.action}
-              className="w-full px-5 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left group"
+              className={`w-full px-5 py-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left group ${
+                isThemeItem ? 'bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-750' : ''
+              }`}
             >
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-colors">
-                  <IconComponent className="w-5 h-5" />
+                <div className={`p-2 ${isThemeItem ? 'bg-gradient-to-br from-blue-500 to-purple-600' : 'bg-blue-50 dark:bg-gray-700'} ${isThemeItem ? 'text-white' : 'text-blue-600 dark:text-blue-400'} rounded-xl group-hover:bg-blue-100 dark:group-hover:bg-gray-600 transition-colors ${isThemeItem ? 'shadow-lg' : ''}`}>
+                  <IconComponent className={`w-5 h-5 ${isThemeItem ? 'animate-pulse' : ''}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+                  <p className={`text-sm font-semibold ${isThemeItem ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-white'} group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors`}>
                     {item.title}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     {item.description}
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
               </div>
             </button>
           )
@@ -415,7 +393,7 @@ const SettingsDropdown = ({ isOpen, onClose }) => {
       </div>
 
       {/* Footer - Logout */}
-      <div className="px-5 py-3 bg-gray-50 border-t border-gray-200">
+      <div className="px-5 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl"

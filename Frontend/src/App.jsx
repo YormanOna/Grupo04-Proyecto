@@ -42,11 +42,11 @@ function App() {
       />
       
       {user && !isLoginPage ? (
-        <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+        <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden transition-colors duration-200">
           <Sidebar />
           <div className="flex flex-col flex-1 overflow-hidden">
             <Navbar />
-            <main className="flex-1 overflow-y-auto bg-gray-50">
+            <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
               <div className="container mx-auto px-6 py-8 max-w-7xl">
                 <AppRouter />
               </div>

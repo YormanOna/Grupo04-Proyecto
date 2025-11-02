@@ -1,11 +1,14 @@
-import React, { useState } from 'react'
-import { createPaciente } from '../../services/pacienteService'
-import { useNavigate } from 'react-router-dom'
-import { UserPlus, Save, X, User, CreditCard, Mail, Phone, MapPin, Calendar, Droplet, AlertCircle, Users } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { createPaciente, getPaciente, updatePaciente } from '../../services/pacienteService'
+import { useNavigate, useParams } from 'react-router-dom'
+import { UserPlus, Save, X, User, CreditCard, Mail, Phone, MapPin, Calendar, Droplet, AlertCircle, Users, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
 import FormField, { TextAreaField, SelectField } from '../../components/FormField'
 
-const PacienteForm = () => {
+const PacienteForm = ({ mode = 'create' }) => {
+  const { id } = useParams()
+  const isEdit = id && mode !== 'view'
+  const isView = mode === 'view'
   const [form, setForm] = useState({ 
     nombre: '', 
     apellido: '', 
@@ -20,12 +23,95 @@ const PacienteForm = () => {
     antecedentes_medicos: '',
     contacto_emergencia_nombre: '',
     contacto_emergencia_telefono: '',
-    contacto_emergencia_relacion: ''
+    contacto_emergencia_relacion: '',
+    // Nuevos campos de afiliación médica (RF-001)
+    tipo_seguro: '',
+    aseguradora: '',
+    numero_poliza: '',
+    fecha_vigencia_poliza: ''
   })
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
   const [isLoading, setIsLoading] = useState(false)
+  const [cedulaValida, setCedulaValida] = useState(null) // null, true, false
+  const [numeroHistoriaClinica, setNumeroHistoriaClinica] = useState(null)
   const navigate = useNavigate()
+
+  // Cargar datos del paciente si está en modo edición o vista
+  useEffect(() => {
+    if (id) {
+      loadPaciente()
+    }
+  }, [id])
+
+  const loadPaciente = async () => {
+    try {
+      setIsLoading(true)
+      const paciente = await getPaciente(id)
+      setForm({
+        nombre: paciente.nombre || '',
+        apellido: paciente.apellido || '',
+        cedula: paciente.cedula?.toString() || '',
+        email: paciente.email || '',
+        telefono: paciente.telefono || '',
+        direccion: paciente.direccion || '',
+        fecha_nacimiento: paciente.fecha_nacimiento || '',
+        genero: paciente.genero || '',
+        grupo_sanguineo: paciente.grupo_sanguineo || '',
+        alergias: paciente.alergias || '',
+        antecedentes_medicos: paciente.antecedentes_medicos || '',
+        contacto_emergencia_nombre: paciente.contacto_emergencia_nombre || '',
+        contacto_emergencia_telefono: paciente.contacto_emergencia_telefono || '',
+        contacto_emergencia_relacion: paciente.contacto_emergencia_relacion || '',
+        tipo_seguro: paciente.tipo_seguro || '',
+        aseguradora: paciente.aseguradora || '',
+        numero_poliza: paciente.numero_poliza || '',
+        fecha_vigencia_poliza: paciente.fecha_vigencia_poliza || ''
+      })
+      setCedulaValida(true)
+      if (paciente.numero_historia_clinica) {
+        setNumeroHistoriaClinica(paciente.numero_historia_clinica)
+      }
+    } catch (error) {
+      console.error('Error loading patient:', error)
+      toast.error('Error al cargar datos del paciente')
+      navigate('/pacientes')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Función de validación de cédula ecuatoriana (RF-001)
+  const validarCedulaEcuatoriana = (cedula) => {
+    if (cedula.length !== 10) return false
+    
+    // Verificar que todos sean dígitos
+    if (!/^\d+$/.test(cedula)) return false
+    
+    // Verificar código de provincia (01-24)
+    const provincia = parseInt(cedula.substring(0, 2), 10)
+    if (provincia < 1 || provincia > 24) return false
+    
+    // Verificar tercer dígito (debe ser menor a 6 para personas naturales)
+    const tercerDigito = parseInt(cedula.charAt(2), 10)
+    if (tercerDigito > 5) return false
+    
+    // Algoritmo de validación del dígito verificador
+    const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2]
+    let suma = 0
+    
+    for (let i = 0; i < 9; i++) {
+      let valor = parseInt(cedula.charAt(i), 10) * coeficientes[i]
+      if (valor > 9) valor -= 9
+      suma += valor
+    }
+    
+    const residuo = suma % 10
+    const digitoVerificador = residuo === 0 ? 0 : 10 - residuo
+    const digitoVerificadorRecibido = parseInt(cedula.charAt(9), 10)
+    
+    return digitoVerificador === digitoVerificadorRecibido
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -70,8 +156,19 @@ const PacienteForm = () => {
       case 'cedula':
         if (!value.trim()) {
           error = 'La cédula es obligatoria'
+          setCedulaValida(null)
         } else if (!/^\d{10}$/.test(value.trim())) {
           error = 'La cédula debe tener exactamente 10 dígitos'
+          setCedulaValida(false)
+        } else {
+          // Validación de cédula ecuatoriana (RF-001)
+          const isValid = validarCedulaEcuatoriana(value.trim())
+          if (!isValid) {
+            error = 'La cédula ingresada no es válida'
+            setCedulaValida(false)
+          } else {
+            setCedulaValida(true)
+          }
         }
         break
 
@@ -166,16 +263,44 @@ const PacienteForm = () => {
 
     setIsLoading(true)
     try {
-      // Convertir cedula a número entero
+      // Convertir cedula a número entero y preparar datos
       const pacienteData = {
         ...form,
         cedula: parseInt(form.cedula.trim(), 10)
       }
-      await createPaciente(pacienteData)
-      toast.success('Paciente registrado exitosamente')
-      navigate('/pacientes')
+      
+      if (isEdit) {
+        // Modo edición: actualizar paciente existente
+        await updatePaciente(id, pacienteData)
+        toast.success('✅ Paciente actualizado exitosamente')
+        
+        // Esperar 1 segundo antes de redirigir
+        setTimeout(() => {
+          navigate('/pacientes')
+        }, 1000)
+      } else {
+        // Modo creación: crear nuevo paciente con generación automática de HC (RF-001)
+        const response = await createPaciente(pacienteData)
+        
+        // Capturar el número de historia clínica generado
+        if (response.numero_historia_clinica) {
+          setNumeroHistoriaClinica(response.numero_historia_clinica)
+          toast.success(
+            `✅ Paciente registrado exitosamente\n📋 HC: ${response.numero_historia_clinica}`,
+            { duration: 5000 }
+          )
+        } else {
+          toast.success('Paciente registrado exitosamente')
+        }
+        
+        // Esperar 2 segundos para mostrar el número de HC antes de redirigir
+        setTimeout(() => {
+          navigate('/pacientes')
+        }, 2000)
+      }
     } catch (error) {
-      const errorMsg = error.response?.data?.detail || 'Error al registrar paciente'
+      const errorMsg = error.response?.data?.detail || 
+        (isEdit ? 'Error al actualizar paciente' : 'Error al registrar paciente')
       toast.error(errorMsg)
       console.error('Error:', error)
     } finally {
@@ -186,18 +311,48 @@ const PacienteForm = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
-        <div className="flex items-center space-x-3 mb-2">
-          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center">
-            <UserPlus className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-3">
+            <div className={`w-12 h-12 bg-gradient-to-br ${isView ? 'from-blue-500 to-blue-700' : isEdit ? 'from-yellow-500 to-orange-700' : 'from-green-500 to-green-700'} rounded-xl flex items-center justify-center`}>
+              {isView ? <Eye className="w-6 h-6 text-white" /> : isEdit ? <User className="w-6 h-6 text-white" /> : <UserPlus className="w-6 h-6 text-white" />}
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-gray-800">
+                {isView ? 'Ver Paciente' : isEdit ? 'Editar Paciente' : 'Nuevo Paciente'}
+              </h2>
+              <p className="text-gray-600">
+                {isView ? 'Información del paciente' : isEdit ? 'Actualizar información del paciente' : 'Registrar información del paciente'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-bold text-gray-800">Nuevo Paciente</h2>
-            <p className="text-gray-600">Registrar información del paciente</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/pacientes')}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            ← Volver
+          </button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-card p-8">
+      <form onSubmit={isView ? (e) => e.preventDefault() : handleSubmit} className="bg-white rounded-xl shadow-card p-8">
+        {/* Alerta de Historia Clínica Generada (RF-001) */}
+        {numeroHistoriaClinica && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">✓</span>
+              </div>
+              <div>
+                <p className="text-green-800 font-semibold">¡Paciente registrado exitosamente!</p>
+                <p className="text-green-700 text-sm mt-1">
+                  Número de Historia Clínica generado: <span className="font-mono font-bold">{numeroHistoriaClinica}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Información Personal */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center space-x-2">
@@ -229,20 +384,42 @@ const PacienteForm = () => {
               placeholder="Ingrese el apellido"
               required
             />
-            <FormField
-              label="Cédula"
-              icon={CreditCard}
-              name="cedula"
-              type="text"
-              value={form.cedula}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.cedula}
-              touched={touched.cedula}
-              placeholder="1234567890"
-              maxLength="10"
-              required
-            />
+            <div>
+              <FormField
+                label="Cédula"
+                icon={CreditCard}
+                name="cedula"
+                type="text"
+                value={form.cedula}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={errors.cedula}
+                touched={touched.cedula}
+                placeholder="1234567890"
+                maxLength="10"
+                required
+              />
+              {/* Indicador de validación de cédula (RF-001) */}
+              {form.cedula.length === 10 && cedulaValida !== null && (
+                <div className={`mt-2 flex items-center space-x-2 text-sm ${cedulaValida ? 'text-green-600' : 'text-red-600'}`}>
+                  {cedulaValida ? (
+                    <>
+                      <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                        <span className="text-green-600 font-bold">✓</span>
+                      </div>
+                      <span>Cédula ecuatoriana válida</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center">
+                        <span className="text-red-600 font-bold">✗</span>
+                      </div>
+                      <span>Cédula inválida</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -290,6 +467,67 @@ const PacienteForm = () => {
               touched={touched.direccion}
               rows={3}
               placeholder="Ingrese la dirección completa"
+            />
+          </div>
+        </div>
+
+        {/* Información de Afiliación Médica (RF-001) */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center space-x-2">
+            <CreditCard className="w-5 h-5 text-blue-600" />
+            <span>Afiliación Médica</span>
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <SelectField
+              label="Tipo de Seguro"
+              icon={CreditCard}
+              name="tipo_seguro"
+              value={form.tipo_seguro}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={errors.tipo_seguro}
+              touched={touched.tipo_seguro}
+            >
+              <option value="">Seleccione</option>
+              <option value="Público">Público (MSP)</option>
+              <option value="IESS">IESS</option>
+              <option value="Seguro Privado">Seguro Privado</option>
+              <option value="Particular">Particular</option>
+              <option value="Otro">Otro</option>
+            </SelectField>
+            <FormField
+              label="Aseguradora"
+              icon={CreditCard}
+              name="aseguradora"
+              value={form.aseguradora}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={errors.aseguradora}
+              touched={touched.aseguradora}
+              placeholder="Nombre de la aseguradora"
+            />
+            <FormField
+              label="Número de Póliza / Carnet"
+              icon={CreditCard}
+              name="numero_poliza"
+              value={form.numero_poliza}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={errors.numero_poliza}
+              touched={touched.numero_poliza}
+              placeholder="Número de póliza o carnet"
+            />
+            <FormField
+              label="Fecha de Vigencia de Póliza"
+              icon={Calendar}
+              name="fecha_vigencia_poliza"
+              type="date"
+              value={form.fecha_vigencia_poliza}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={errors.fecha_vigencia_poliza}
+              touched={touched.fecha_vigencia_poliza}
+              min={new Date().toISOString().split('T')[0]}
             />
           </div>
         </div>
@@ -410,24 +648,26 @@ const PacienteForm = () => {
         </div>
 
         {/* Botones de acción */}
-        <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={() => navigate('/pacientes')}
-            className="flex items-center space-x-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
-          >
-            <X className="w-5 h-5" />
-            <span>Cancelar</span>
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save className="w-5 h-5" />
-            <span>{isLoading ? 'Guardando...' : 'Guardar Paciente'}</span>
-          </button>
-        </div>
+        {!isView && (
+          <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={() => navigate('/pacientes')}
+              className="flex items-center space-x-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+            >
+              <X className="w-5 h-5" />
+              <span>Cancelar</span>
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`flex items-center space-x-2 px-6 py-3 bg-gradient-to-r ${isEdit ? 'from-yellow-600 to-orange-700 hover:from-yellow-700 hover:to-orange-800' : 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'} text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <Save className="w-5 h-5" />
+              <span>{isLoading ? (isEdit ? 'Actualizando...' : 'Guardando...') : (isEdit ? 'Actualizar Paciente' : 'Guardar Paciente')}</span>
+            </button>
+          </div>
+        )}
       </form>
     </div>
   )

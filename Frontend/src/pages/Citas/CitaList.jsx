@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { getCitas, deleteCita, updateCita } from '../../services/citaService'
 import { Link, useNavigate } from 'react-router-dom'
-import { Calendar, Plus, Search, Clock, User, Stethoscope, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import { Calendar, Plus, Search, Clock, User, Stethoscope, Edit, Trash2, CheckCircle, XCircle, Activity } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../context/AuthContext'
 
@@ -13,7 +13,9 @@ const CitaList = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   
-  const isAdmin = user?.cargo === 'Administrador'
+  const isAdmin = user?.cargo === 'Administrador' || user?.cargo === 'Admin General'
+  const isNurse = user?.cargo === 'Enfermera'
+  const canManageCitas = !isNurse // Enfermera solo puede VER citas, no gestionarlas
 
   useEffect(() => {
     loadCitas()
@@ -94,23 +96,42 @@ const CitaList = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-white" />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg">
+            <Calendar className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-gray-800">Citas Médicas</h2>
-            <p className="text-gray-600">Gestión de citas programadas</p>
+            <h2 className="text-3xl font-bold text-gray-900">Citas Médicas</h2>
+            <p className="text-gray-600 mt-1">Gestión completa de citas programadas</p>
           </div>
         </div>
-        <Link
-          to="/citas/nueva"
-          className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Nueva Cita</span>
-        </Link>
+        <div className="flex items-center space-x-3">
+          {canManageCitas && (
+            <Link
+              to="/citas/calendario"
+              className="flex items-center space-x-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+            >
+              <Calendar className="w-5 h-5" />
+              <span>Ver Calendario</span>
+            </Link>
+          )}
+          {canManageCitas && (
+            <Link
+              to="/citas/nueva"
+              className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Nueva Cita</span>
+            </Link>
+          )}
+          {isNurse && (
+            <div className="bg-blue-50 border-2 border-blue-200 text-blue-700 px-6 py-3 rounded-xl font-semibold flex items-center space-x-2">
+              <Activity className="w-5 h-5" />
+              <span>Citas para Signos Vitales</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Filtros y búsqueda */}
@@ -120,56 +141,85 @@ const CitaList = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar por ID..."
+              placeholder="Buscar por ID, paciente o médico..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            className="px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white font-medium"
           >
             <option value="todas">Todas las citas</option>
-            <option value="programada">Programadas</option>
-            <option value="completada">Completadas</option>
-            <option value="cancelada">Canceladas</option>
+            <option value="Pendiente">Pendientes</option>
+            <option value="Confirmada">Confirmadas</option>
+            <option value="Completada">Completadas</option>
+            <option value="Cancelada">Canceladas</option>
           </select>
         </div>
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg p-4 shadow-sm border-l-4 border-blue-500">
-          <p className="text-sm text-gray-600">Total Citas</p>
-          <p className="text-2xl font-bold text-gray-800">{citas.length}</p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 shadow-lg border border-blue-100 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Total Citas</p>
+              <p className="text-3xl font-bold text-blue-700">{citas.length}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border-l-4 border-green-500">
-          <p className="text-sm text-gray-600">Completadas</p>
-          <p className="text-2xl font-bold text-green-600">
-            {citas.filter(c => c.estado === 'completada').length}
-          </p>
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-green-100 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Completadas</p>
+              <p className="text-3xl font-bold text-green-700">
+                {citas.filter(c => c.estado === 'Completada').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border-l-4 border-purple-500">
-          <p className="text-sm text-gray-600">Programadas</p>
-          <p className="text-2xl font-bold text-purple-600">
-            {citas.filter(c => c.estado === 'programada').length}
-          </p>
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 shadow-lg border border-purple-100 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Pendientes</p>
+              <p className="text-3xl font-bold text-purple-700">
+                {citas.filter(c => c.estado === 'Pendiente' || c.estado === 'Confirmada').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border-l-4 border-red-500">
-          <p className="text-sm text-gray-600">Canceladas</p>
-          <p className="text-2xl font-bold text-red-600">
-            {citas.filter(c => c.estado === 'cancelada').length}
-          </p>
+        <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-6 shadow-lg border border-red-100 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Canceladas</p>
+              <p className="text-3xl font-bold text-red-700">
+                {citas.filter(c => c.estado === 'Cancelada').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
+              <XCircle className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Lista de citas */}
-      <div className="bg-white rounded-xl shadow-card overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200/50">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 border-b-2 border-purple-300">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   ID
@@ -206,26 +256,36 @@ const CitaList = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-800">
-                          {new Date(cita.fecha).toLocaleString('es-ES', {
-                            dateStyle: 'short',
-                            timeStyle: 'short'
-                          })}
-                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{cita.fecha}</p>
+                          <p className="text-xs text-gray-500">{cita.hora}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <User className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-800">ID: {cita.paciente_id}</span>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            {cita.paciente_nombre} {cita.paciente_apellido}
+                          </p>
+                          {cita.paciente_cedula && (
+                            <p className="text-xs text-gray-500">CI: {cita.paciente_cedula}</p>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <Stethoscope className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-800">
-                          {cita.medico_id ? `ID: ${cita.medico_id}` : 'Sin asignar'}
-                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            Dr. {cita.medico_nombre} {cita.medico_apellido}
+                          </p>
+                          {cita.medico_especialidad && (
+                            <p className="text-xs text-gray-500">{cita.medico_especialidad}</p>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -238,7 +298,7 @@ const CitaList = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
-                        {cita.estado !== 'completada' && (
+                        {canManageCitas && cita.estado !== 'completada' && (
                           <button 
                             onClick={() => handleStatusChange(cita.id, 'completada')}
                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" 
@@ -247,14 +307,16 @@ const CitaList = () => {
                             <CheckCircle className="w-4 h-4" />
                           </button>
                         )}
-                        <button 
-                          onClick={() => handleEdit(cita.id)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
-                          title="Editar"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        {cita.estado !== 'cancelada' && (
+                        {canManageCitas && (
+                          <button 
+                            onClick={() => handleEdit(cita.id)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
+                            title="Editar"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canManageCitas && cita.estado !== 'cancelada' && (
                           <button 
                             onClick={() => handleStatusChange(cita.id, 'cancelada')}
                             className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" 
@@ -262,6 +324,15 @@ const CitaList = () => {
                           >
                             <XCircle className="w-4 h-4" />
                           </button>
+                        )}
+                        {isNurse && (
+                          <Link
+                            to={`/enfermeria/signos-vitales?paciente=${cita.paciente_id}`}
+                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Registrar Signos Vitales"
+                          >
+                            <Activity className="w-4 h-4" />
+                          </Link>
                         )}
                         {isAdmin && (
                           <button 

@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Stethoscope, User, Calendar, Activity, FileText, Pill, 
   Save, Send, AlertCircle, Clock, Heart, Thermometer,
-  ArrowLeft, Plus, Trash2, Eye
+  ArrowLeft, Plus, Trash2, Eye, Download, Mail
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import consultaService from '../../services/consultaService';
 import citaService from '../../services/citaService';
 import recetaService from '../../services/recetaService';
+import { diagnosticoService } from '../../services/diagnosticoService';
+import medicamentoService from '../../services/medicamentoService';
+import { buscarMedicamentos } from '../../services/medicamentoService';
 
 const ConsultaMedica = () => {
   const navigate = useNavigate();
@@ -19,6 +22,7 @@ const ConsultaMedica = () => {
   const [consultaActual, setConsultaActual] = useState(null);
   const [loading, setLoading] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [generandoComprobante, setGenerandoComprobante] = useState(false);
   const [vistaActiva, setVistaActiva] = useState('cola'); // 'cola', 'consulta', 'historia'
 
   // Datos de la consulta
@@ -27,6 +31,7 @@ const ConsultaMedica = () => {
     enfermedad_actual: '',
     examen_fisico: '',
     diagnostico: '',
+    diagnostico_codigo: '', // RF-002: Código CIE-10
     diagnosticos_secundarios: '',
     tratamiento: '',
     indicaciones: '',
@@ -41,9 +46,113 @@ const ConsultaMedica = () => {
   ]);
   const [indicacionesReceta, setIndicacionesReceta] = useState('');
 
+  // RF-003: Estados para autocomplete CIE-10
+  const [sugerenciasCIE10, setSugerenciasCIE10] = useState([]);
+  const [buscandoCIE10, setBuscandoCIE10] = useState(false);
+  const [mostrarSugerenciasCIE10, setMostrarSugerenciasCIE10] = useState(false);
+
+  // RF-003: Estados para autocomplete medicamentos
+  const [sugerenciasMedicamentos, setSugerenciasMedicamentos] = useState({});
+  const [buscandoMedicamentos, setBuscandoMedicamentos] = useState({});
+  const [medicamentoActivoIndex, setMedicamentoActivoIndex] = useState(null);
+  const [mostrarSugerenciasMedicamentos, setMostrarSugerenciasMedicamentos] = useState({});
+
+  // RF-003: Estados para programación de seguimiento
+  const [seguimiento, setSeguimiento] = useState({
+    programar: false,
+    especialidad: '',
+    fecha: '',
+    hora: '',
+    observaciones: ''
+  });
+  const [mostrarSeguimiento, setMostrarSeguimiento] = useState(false);
+
   useEffect(() => {
     cargarPacientesEnCola();
   }, []);
+
+  // RF-003: Cerrar dropdown de CIE-10 al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdown = event.target.closest('[data-autocomplete-cie10]');
+      if (!dropdown) {
+        setMostrarSugerenciasCIE10(false);
+      }
+    };
+
+    if (mostrarSugerenciasCIE10) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [mostrarSugerenciasCIE10]);
+
+  // RF-003: Cerrar dropdown de medicamentos al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdown = event.target.closest('[data-autocomplete-medicamento]');
+      if (!dropdown) {
+        setMostrarSugerenciasMedicamentos({});
+      }
+    };
+
+    const hayDropdownsAbiertos = Object.values(mostrarSugerenciasMedicamentos).some(val => val);
+    if (hayDropdownsAbiertos) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [mostrarSugerenciasMedicamentos]);
+
+  // RF-003: Cerrar dropdown de medicamentos al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdown = event.target.closest('[data-autocomplete-medicamento]');
+      if (!dropdown) {
+        setMostrarSugerenciasMedicamentos({});
+      }
+    };
+
+    const hayAlgunDropdownAbierto = Object.values(mostrarSugerenciasMedicamentos).some(Boolean);
+    if (hayAlgunDropdownAbierto) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [mostrarSugerenciasMedicamentos]);
+
+  // RF-003: Autoguardado automático cada 30 segundos en localStorage
+  useEffect(() => {
+    if (!citaSeleccionada || !consultaActual) return;
+
+    // Recuperar draft al iniciar consulta
+    const draftKey = `draft_consulta_${consultaActual.id}`;
+    const draftGuardado = localStorage.getItem(draftKey);
+    
+    if (draftGuardado) {
+      try {
+        const draft = JSON.parse(draftGuardado);
+        setDatosConsulta(draft.datos);
+        if (draft.medicamentos) setMedicamentos(draft.medicamentos);
+        if (draft.indicacionesReceta) setIndicacionesReceta(draft.indicacionesReceta);
+        toast.success('📝 Borrador recuperado automáticamente', { duration: 2000 });
+      } catch (error) {
+        console.error('Error al recuperar draft:', error);
+      }
+    }
+
+    // Configurar autoguardado cada 30 segundos
+    const intervalo = setInterval(() => {
+      const draft = {
+        datos: datosConsulta,
+        medicamentos,
+        indicacionesReceta,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      console.log('✅ Autoguardado realizado:', new Date().toLocaleTimeString());
+    }, 30000); // 30 segundos
+
+    // Limpiar intervalo al desmontar
+    return () => clearInterval(intervalo);
+  }, [citaSeleccionada, consultaActual, datosConsulta, medicamentos, indicacionesReceta]);
 
   const cargarPacientesEnCola = async () => {
     setLoading(true);
@@ -123,6 +232,68 @@ const ConsultaMedica = () => {
     const nuevosMedicamentos = [...medicamentos];
     nuevosMedicamentos[index][field] = value;
     setMedicamentos(nuevosMedicamentos);
+  };
+
+  // RF-003: Buscar diagnósticos CIE-10
+  const buscarDiagnosticosCIE10 = async (query) => {
+    if (!query || query.length < 2) {
+      setSugerenciasCIE10([]);
+      setMostrarSugerenciasCIE10(false);
+      return;
+    }
+
+    setBuscandoCIE10(true);
+    try {
+      const resultados = await diagnosticoService.buscar(query, 10);
+      setSugerenciasCIE10(resultados);
+      setMostrarSugerenciasCIE10(true);
+    } catch (error) {
+      console.error('Error al buscar CIE-10:', error);
+      setSugerenciasCIE10([]);
+    } finally {
+      setBuscandoCIE10(false);
+    }
+  };
+
+  // RF-003: Seleccionar diagnóstico CIE-10
+  const seleccionarDiagnosticoCIE10 = (diagnostico) => {
+    setDatosConsulta(prev => ({
+      ...prev,
+      diagnostico_codigo: diagnostico.codigo,
+      diagnostico: diagnostico.descripcion
+    }));
+    setMostrarSugerenciasCIE10(false);
+    setSugerenciasCIE10([]);
+  };
+
+  // RF-003: Buscar medicamentos
+  const buscarMedicamentosAutocomplete = async (query, index) => {
+    if (!query || query.length < 2) {
+      setSugerenciasMedicamentos(prev => ({ ...prev, [index]: [] }));
+      setMostrarSugerenciasMedicamentos(prev => ({ ...prev, [index]: false }));
+      return;
+    }
+
+    setBuscandoMedicamentos(prev => ({ ...prev, [index]: true }));
+    try {
+      const resultados = await medicamentoService.buscarMedicamentos(query, 10);
+      setSugerenciasMedicamentos(prev => ({ ...prev, [index]: resultados }));
+      setMostrarSugerenciasMedicamentos(prev => ({ ...prev, [index]: true }));
+    } catch (error) {
+      console.error('Error al buscar medicamentos:', error);
+      setSugerenciasMedicamentos(prev => ({ ...prev, [index]: [] }));
+    } finally {
+      setBuscandoMedicamentos(prev => ({ ...prev, [index]: false }));
+    }
+  };
+
+  // RF-003: Seleccionar medicamento
+  const seleccionarMedicamento = (medicamento, index) => {
+    const nuevosMedicamentos = [...medicamentos];
+    nuevosMedicamentos[index].nombre = medicamento.nombre;
+    setMedicamentos(nuevosMedicamentos);
+    setMostrarSugerenciasMedicamentos(prev => ({ ...prev, [index]: false }));
+    setSugerenciasMedicamentos(prev => ({ ...prev, [index]: [] }));
   };
 
   const validarConsulta = () => {
@@ -241,6 +412,46 @@ const ConsultaMedica = () => {
         estado: 'completada'
       });
 
+      // RF-003: Limpiar draft del localStorage al finalizar
+      if (consultaActual?.id) {
+        localStorage.removeItem(`draft_consulta_${consultaActual.id}`);
+      }
+
+      // RF-003: Crear cita de seguimiento si está programada
+      if (seguimiento.programar) {
+        if (!seguimiento.especialidad || !seguimiento.fecha || !seguimiento.hora) {
+          toast.error('Complete todos los campos de la cita de seguimiento');
+          return;
+        }
+
+        try {
+          const citaSeguimiento = {
+            paciente_id: citaSeleccionada.paciente_id,
+            medico_id: user.id,
+            fecha: seguimiento.fecha,
+            hora: seguimiento.hora,
+            motivo: `Seguimiento - ${seguimiento.observaciones || 'Control de progreso'}`,
+            estado: 'agendada',
+            tipo: 'Seguimiento'
+          };
+
+          await citaService.crear(citaSeguimiento);
+          toast.success(`📅 Cita de seguimiento agendada para ${seguimiento.fecha}`);
+          
+          // Resetear formulario de seguimiento
+          setSeguimiento({
+            programar: false,
+            especialidad: '',
+            fecha: '',
+            hora: '',
+            observaciones: ''
+          });
+        } catch (error) {
+          console.error('Error al crear cita de seguimiento:', error);
+          toast.error('No se pudo agendar la cita de seguimiento');
+        }
+      }
+
       toast.success('✅ Consulta finalizada y receta enviada a farmacia');
       
       // Volver a la cola
@@ -273,12 +484,88 @@ const ConsultaMedica = () => {
         estado: 'completada'
       });
 
+      // RF-003: Limpiar draft del localStorage
+      if (consultaActual?.id) {
+        localStorage.removeItem(`draft_consulta_${consultaActual.id}`);
+      }
+
+      // RF-003: Crear cita de seguimiento si está programada
+      if (seguimiento.programar) {
+        if (!seguimiento.especialidad || !seguimiento.fecha || !seguimiento.hora) {
+          toast.error('Complete todos los campos de la cita de seguimiento');
+          return;
+        }
+
+        try {
+          const citaSeguimiento = {
+            paciente_id: citaSeleccionada.paciente_id,
+            medico_id: user.id,
+            fecha: seguimiento.fecha,
+            hora: seguimiento.hora,
+            motivo: `Seguimiento - ${seguimiento.observaciones || 'Control de progreso'}`,
+            estado: 'agendada',
+            tipo: 'Seguimiento'
+          };
+
+          await citaService.crear(citaSeguimiento);
+          toast.success(`📅 Cita de seguimiento agendada para ${seguimiento.fecha}`);
+          
+          // Resetear formulario de seguimiento
+          setSeguimiento({
+            programar: false,
+            especialidad: '',
+            fecha: '',
+            hora: '',
+            observaciones: ''
+          });
+        } catch (error) {
+          console.error('Error al crear cita de seguimiento:', error);
+          toast.error('No se pudo agendar la cita de seguimiento');
+        }
+      }
+
       toast.success('✅ Consulta finalizada exitosamente');
       volverACola();
       cargarPacientesEnCola();
     } catch (error) {
       console.error('Error al finalizar consulta:', error);
       toast.error('Error al finalizar la consulta');
+    }
+  };
+
+  // RF-003: Generar comprobante de asistencia
+  const generarComprobante = async (consultaId, enviarEmail = false) => {
+    setGenerandoComprobante(true);
+    try {
+      const response = await consultaService.generarComprobante(consultaId, enviarEmail);
+      
+      // Si la respuesta es un objeto con mensaje (email enviado)
+      if (response.data && typeof response.data === 'object' && response.data.mensaje) {
+        toast.success(response.data.mensaje);
+        return;
+      }
+      
+      // Si es un blob (PDF), descargarlo
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Comprobante_Consulta_${consultaId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      if (enviarEmail) {
+        toast.success('📧 Comprobante descargado y enviado por email');
+      } else {
+        toast.success('✅ Comprobante descargado exitosamente');
+      }
+    } catch (error) {
+      console.error('Error al generar comprobante:', error);
+      toast.error('Error al generar el comprobante de asistencia');
+    } finally {
+      setGenerandoComprobante(false);
     }
   };
 
@@ -291,6 +578,7 @@ const ConsultaMedica = () => {
       enfermedad_actual: '',
       examen_fisico: '',
       diagnostico: '',
+      diagnostico_codigo: '',
       diagnosticos_secundarios: '',
       tratamiento: '',
       indicaciones: '',
@@ -300,45 +588,138 @@ const ConsultaMedica = () => {
     });
     setMedicamentos([{ nombre: '', dosis: '', frecuencia: '', duracion: '', via: '' }]);
     setIndicacionesReceta('');
+    setSeguimiento({
+      programar: false,
+      especialidad: '',
+      fecha: '',
+      hora: '',
+      observaciones: ''
+    });
   };
 
   const formatearSignosVitales = (consulta) => {
     if (!consulta?.signos_vitales) return 'No disponible';
     
     const sv = consulta.signos_vitales;
+    
+    // Funciones de validación de rangos normales
+    const validarRango = (valor, min, max) => {
+      if (!valor || valor === 'N/A') return { valido: true, valor };
+      const num = parseFloat(valor);
+      return { valido: num >= min && num <= max, valor };
+    };
+
+    const validarPA = (pa) => {
+      if (!pa || pa === 'N/A') return { valido: true, valor: pa };
+      const match = pa.match(/^(\d+)\/(\d+)$/);
+      if (!match) return { valido: false, valor: pa };
+      const sistolica = parseInt(match[1]);
+      const diastolica = parseInt(match[2]);
+      const valido = sistolica >= 90 && sistolica <= 140 && diastolica >= 60 && diastolica <= 90;
+      return { valido, valor: pa };
+    };
+
+    // Validar todos los signos vitales
+    const validaciones = {
+      pa: validarPA(sv.presion_arterial),
+      fc: validarRango(sv.frecuencia_cardiaca, 60, 100),
+      fr: validarRango(sv.frecuencia_respiratoria, 12, 20),
+      temp: validarRango(sv.temperatura, 36.0, 37.5),
+      spo2: validarRango(sv.saturacion_oxigeno, 95, 100)
+    };
+
+    const alertas = [];
+    if (!validaciones.pa.valido) alertas.push('Presión Arterial');
+    if (!validaciones.fc.valido) alertas.push('Frecuencia Cardíaca');
+    if (!validaciones.fr.valido) alertas.push('Frecuencia Respiratoria');
+    if (!validaciones.temp.valido) alertas.push('Temperatura');
+    if (!validaciones.spo2.valido) alertas.push('SpO₂');
+
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-        <div className="bg-red-50 p-2 rounded">
-          <p className="text-red-600 font-semibold">PA</p>
-          <p className="text-gray-800">{sv.presion_arterial || 'N/A'}</p>
-        </div>
-        <div className="bg-green-50 p-2 rounded">
-          <p className="text-green-600 font-semibold">FC</p>
-          <p className="text-gray-800">{sv.frecuencia_cardiaca || 'N/A'} lpm</p>
-        </div>
-        <div className="bg-blue-50 p-2 rounded">
-          <p className="text-blue-600 font-semibold">FR</p>
-          <p className="text-gray-800">{sv.frecuencia_respiratoria || 'N/A'} rpm</p>
-        </div>
-        <div className="bg-orange-50 p-2 rounded">
-          <p className="text-orange-600 font-semibold">Temp</p>
-          <p className="text-gray-800">{sv.temperatura || 'N/A'} °C</p>
-        </div>
-        <div className="bg-cyan-50 p-2 rounded">
-          <p className="text-cyan-600 font-semibold">SpO₂</p>
-          <p className="text-gray-800">{sv.saturacion_oxigeno || 'N/A'}%</p>
-        </div>
-        <div className="bg-purple-50 p-2 rounded">
-          <p className="text-purple-600 font-semibold">Peso</p>
-          <p className="text-gray-800">{sv.peso || 'N/A'} kg</p>
-        </div>
-        <div className="bg-indigo-50 p-2 rounded">
-          <p className="text-indigo-600 font-semibold">Talla</p>
-          <p className="text-gray-800">{sv.talla || 'N/A'} m</p>
-        </div>
-        <div className="bg-teal-50 p-2 rounded">
-          <p className="text-teal-600 font-semibold">IMC</p>
-          <p className="text-gray-800">{sv.imc || 'N/A'}</p>
+      <div className="space-y-3">
+        {/* Alerta general si hay valores fuera de rango */}
+        {alertas.length > 0 && (
+          <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 rounded-lg p-3 animate-pulse">
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+              <AlertCircle className="w-5 h-5" />
+              <p className="font-semibold text-sm">
+                ⚠️ Signos vitales fuera de rango normal: {alertas.join(', ')}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Grid de signos vitales con indicadores de alerta */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div className={`p-2 rounded ${!validaciones.pa.valido ? 'bg-red-100 dark:bg-red-900/30 border-2 border-red-500' : 'bg-red-50 dark:bg-red-900/10'}`}>
+            <div className="flex items-center gap-1">
+              <p className="text-red-600 dark:text-red-400 font-semibold">PA</p>
+              {!validaciones.pa.valido && <AlertCircle className="w-3 h-3 text-red-600" />}
+            </div>
+            <p className="text-gray-800 dark:text-gray-200">{sv.presion_arterial || 'N/A'}</p>
+            {!validaciones.pa.valido && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1">Rango: 90-140/60-90</p>
+            )}
+          </div>
+
+          <div className={`p-2 rounded ${!validaciones.fc.valido ? 'bg-red-100 dark:bg-red-900/30 border-2 border-red-500' : 'bg-green-50 dark:bg-green-900/10'}`}>
+            <div className="flex items-center gap-1">
+              <p className="text-green-600 dark:text-green-400 font-semibold">FC</p>
+              {!validaciones.fc.valido && <AlertCircle className="w-3 h-3 text-red-600" />}
+            </div>
+            <p className="text-gray-800 dark:text-gray-200">{sv.frecuencia_cardiaca || 'N/A'} lpm</p>
+            {!validaciones.fc.valido && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1">Rango: 60-100</p>
+            )}
+          </div>
+
+          <div className={`p-2 rounded ${!validaciones.fr.valido ? 'bg-red-100 dark:bg-red-900/30 border-2 border-red-500' : 'bg-blue-50 dark:bg-blue-900/10'}`}>
+            <div className="flex items-center gap-1">
+              <p className="text-blue-600 dark:text-blue-400 font-semibold">FR</p>
+              {!validaciones.fr.valido && <AlertCircle className="w-3 h-3 text-red-600" />}
+            </div>
+            <p className="text-gray-800 dark:text-gray-200">{sv.frecuencia_respiratoria || 'N/A'} rpm</p>
+            {!validaciones.fr.valido && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1">Rango: 12-20</p>
+            )}
+          </div>
+
+          <div className={`p-2 rounded ${!validaciones.temp.valido ? 'bg-red-100 dark:bg-red-900/30 border-2 border-red-500' : 'bg-orange-50 dark:bg-orange-900/10'}`}>
+            <div className="flex items-center gap-1">
+              <p className="text-orange-600 dark:text-orange-400 font-semibold">Temp</p>
+              {!validaciones.temp.valido && <AlertCircle className="w-3 h-3 text-red-600" />}
+            </div>
+            <p className="text-gray-800 dark:text-gray-200">{sv.temperatura || 'N/A'} °C</p>
+            {!validaciones.temp.valido && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1">Rango: 36-37.5</p>
+            )}
+          </div>
+
+          <div className={`p-2 rounded ${!validaciones.spo2.valido ? 'bg-red-100 dark:bg-red-900/30 border-2 border-red-500' : 'bg-cyan-50 dark:bg-cyan-900/10'}`}>
+            <div className="flex items-center gap-1">
+              <p className="text-cyan-600 dark:text-cyan-400 font-semibold">SpO₂</p>
+              {!validaciones.spo2.valido && <AlertCircle className="w-3 h-3 text-red-600" />}
+            </div>
+            <p className="text-gray-800 dark:text-gray-200">{sv.saturacion_oxigeno || 'N/A'}%</p>
+            {!validaciones.spo2.valido && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1">Rango: 95-100</p>
+            )}
+          </div>
+
+          <div className="bg-purple-50 dark:bg-purple-900/10 p-2 rounded">
+            <p className="text-purple-600 dark:text-purple-400 font-semibold">Peso</p>
+            <p className="text-gray-800 dark:text-gray-200">{sv.peso || 'N/A'} kg</p>
+          </div>
+
+          <div className="bg-indigo-50 dark:bg-indigo-900/10 p-2 rounded">
+            <p className="text-indigo-600 dark:text-indigo-400 font-semibold">Talla</p>
+            <p className="text-gray-800 dark:text-gray-200">{sv.talla || 'N/A'} m</p>
+          </div>
+
+          <div className="bg-teal-50 dark:bg-teal-900/10 p-2 rounded">
+            <p className="text-teal-600 dark:text-teal-400 font-semibold">IMC</p>
+            <p className="text-gray-800 dark:text-gray-200">{sv.imc || 'N/A'}</p>
+          </div>
         </div>
       </div>
     );
@@ -563,18 +944,78 @@ const ConsultaMedica = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Diagnóstico Principal */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Diagnóstico Principal *
               </label>
-              <input
-                type="text"
-                name="diagnostico"
-                value={datosConsulta.diagnostico}
-                onChange={handleInputChange}
-                placeholder="CIE-10 o descripción del diagnóstico"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* RF-003: Autocomplete CIE-10 */}
+                <div className="md:col-span-1 relative" data-autocomplete-cie10>
+                  <input
+                    type="text"
+                    name="diagnostico_codigo"
+                    value={datosConsulta.diagnostico_codigo}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      buscarDiagnosticosCIE10(e.target.value);
+                    }}
+                    onFocus={() => {
+                      if (sugerenciasCIE10.length > 0) {
+                        setMostrarSugerenciasCIE10(true);
+                      }
+                    }}
+                    placeholder="Buscar código CIE-10..."
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {buscandoCIE10 ? '🔍 Buscando...' : 'RF-003: Búsqueda CIE-10'}
+                  </p>
+                  
+                  {/* Dropdown de sugerencias */}
+                  {mostrarSugerenciasCIE10 && sugerenciasCIE10.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+                      {sugerenciasCIE10.map((diag) => (
+                        <button
+                          key={diag.id}
+                          type="button"
+                          onClick={() => seleccionarDiagnosticoCIE10(diag)}
+                          className="w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 border-b border-gray-200 dark:border-gray-700 last:border-0 transition-colors"
+                        >
+                          <div className="flex items-start gap-2">
+                            <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm">
+                              {diag.codigo}
+                            </span>
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-800 dark:text-gray-200">
+                                {diag.descripcion}
+                              </p>
+                              {diag.categoria && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {diag.categoria}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="md:col-span-2">
+                  <input
+                    type="text"
+                    name="diagnostico"
+                    value={datosConsulta.diagnostico}
+                    onChange={handleInputChange}
+                    placeholder="Descripción del diagnóstico"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Se autocompletará al seleccionar código CIE-10
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Diagnósticos Secundarios */}
@@ -712,17 +1153,54 @@ const ConsultaMedica = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="lg:col-span-2">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Nombre del Medicamento *
+                {/* RF-003: Autocomplete medicamentos */}
+                <div className="lg:col-span-2 relative" data-autocomplete-medicamento={index}>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Nombre del Medicamento * {buscandoMedicamentos[index] && '🔍'}
                   </label>
                   <input
                     type="text"
                     value={med.nombre}
-                    onChange={(e) => handleMedicamentoChange(index, 'nombre', e.target.value)}
-                    placeholder="Ej: Amoxicilina 500mg"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    onChange={(e) => {
+                      handleMedicamentoChange(index, 'nombre', e.target.value);
+                      buscarMedicamentosAutocomplete(e.target.value, index);
+                    }}
+                    onFocus={() => {
+                      if (sugerenciasMedicamentos[index]?.length > 0) {
+                        setMostrarSugerenciasMedicamentos(prev => ({ ...prev, [index]: true }));
+                      }
+                    }}
+                    placeholder="Buscar medicamento..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
+                  
+                  {/* Dropdown de sugerencias */}
+                  {mostrarSugerenciasMedicamentos[index] && sugerenciasMedicamentos[index]?.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                      {sugerenciasMedicamentos[index].map((medicamento) => (
+                        <button
+                          key={medicamento.id}
+                          type="button"
+                          onClick={() => seleccionarMedicamento(medicamento, index)}
+                          className="w-full text-left px-4 py-2 hover:bg-orange-50 dark:hover:bg-orange-900/30 border-b border-gray-200 dark:border-gray-700 last:border-0 transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-800 dark:text-gray-200 font-medium">
+                              {medicamento.nombre}
+                            </span>
+                            <span className="text-xs text-green-600 dark:text-green-400">
+                              Stock: {medicamento.stock}
+                            </span>
+                          </div>
+                          {medicamento.contenido && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {medicamento.contenido}
+                            </p>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -798,7 +1276,7 @@ const ConsultaMedica = () => {
 
         {/* Indicaciones de la Receta */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Indicaciones para la Receta
           </label>
           <textarea
@@ -806,8 +1284,97 @@ const ConsultaMedica = () => {
             onChange={(e) => setIndicacionesReceta(e.target.value)}
             rows="3"
             placeholder="Indicaciones específicas para la toma de medicamentos..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           />
+        </div>
+
+        {/* RF-003: Programación de Seguimiento */}
+        <div className="mt-6 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-5 bg-blue-50 dark:bg-blue-900/20">
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="checkbox"
+              id="programar-seguimiento"
+              checked={seguimiento.programar}
+              onChange={(e) => setSeguimiento(prev => ({ ...prev, programar: e.target.checked }))}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <label htmlFor="programar-seguimiento" className="text-lg font-semibold text-blue-700 dark:text-blue-400 cursor-pointer flex items-center gap-2">
+              <Calendar className="w-6 h-6" />
+              Programar Cita de Seguimiento
+            </label>
+          </div>
+
+          {seguimiento.programar && (
+            <div className="mt-4 space-y-4 pl-7">
+              <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
+                Se agendará automáticamente una cita de control para evaluar el progreso del paciente
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Especialidad *
+                  </label>
+                  <select
+                    value={seguimiento.especialidad}
+                    onChange={(e) => setSeguimiento(prev => ({ ...prev, especialidad: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Seleccionar especialidad...</option>
+                    <option value="Medicina General">Medicina General</option>
+                    <option value="Cardiología">Cardiología</option>
+                    <option value="Pediatría">Pediatría</option>
+                    <option value="Ginecología">Ginecología</option>
+                    <option value="Traumatología">Traumatología</option>
+                    <option value="Dermatología">Dermatología</option>
+                    <option value="Oftalmología">Oftalmología</option>
+                    <option value="Otorrinolaringología">Otorrinolaringología</option>
+                    <option value="Neurología">Neurología</option>
+                    <option value="Psiquiatría">Psiquiatría</option>
+                    <option value="Urología">Urología</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Fecha Propuesta *
+                  </label>
+                  <input
+                    type="date"
+                    value={seguimiento.fecha}
+                    onChange={(e) => setSeguimiento(prev => ({ ...prev, fecha: e.target.value }))}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Hora *
+                  </label>
+                  <input
+                    type="time"
+                    value={seguimiento.hora}
+                    onChange={(e) => setSeguimiento(prev => ({ ...prev, hora: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Observaciones para Seguimiento
+                  </label>
+                  <textarea
+                    value={seguimiento.observaciones}
+                    onChange={(e) => setSeguimiento(prev => ({ ...prev, observaciones: e.target.value }))}
+                    rows="2"
+                    placeholder="Motivo de la cita de control..."
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Botones de Acción Final */}
@@ -840,7 +1407,48 @@ const ConsultaMedica = () => {
           </button>
         </div>
 
-        <p className="text-xs text-gray-500 mt-4 text-center">
+        {/* RF-003: Botones de Comprobante de Asistencia */}
+        {consultaActual && (
+          <div className="mt-6 border-t-2 border-gray-200 dark:border-gray-700 pt-6">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-green-600" />
+              Comprobante de Asistencia
+            </h4>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => generarComprobante(consultaActual.id, false)}
+                disabled={generandoComprobante}
+                className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold transition-colors shadow-md"
+              >
+                {generandoComprobante ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Generando...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5" />
+                    Descargar Comprobante PDF
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => generarComprobante(consultaActual.id, true)}
+                disabled={generandoComprobante}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-semibold transition-colors shadow-md"
+              >
+                <Mail className="w-5 h-5" />
+                Enviar por Email
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              * El comprobante incluye datos de la consulta, paciente y médico tratante
+            </p>
+          </div>
+        )}
+
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
           * La receta se enviará automáticamente a farmacia para su dispensación
         </p>
       </div>

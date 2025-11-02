@@ -8,6 +8,7 @@ from app.core.security import get_password_hash
 from app.models.empleado import Empleado
 from app.models.medico import Medico
 from app.utils.logger import logger
+from app.core.init_cie10 import inicializar_diagnosticos_cie10
 
 
 def create_default_users(db: Session):
@@ -15,6 +16,14 @@ def create_default_users(db: Session):
     Crea usuarios por defecto si no existen en la base de datos
     """
     default_users = [
+        {
+            "nombre": "Super",
+            "apellido": "Admin",
+            "cedula": 1111111111,
+            "cargo": "Admin General",
+            "email": "superadmin@hospital.com",
+            "password": "superadmin123"
+        },
         {
             "nombre": "Admin",
             "apellido": "Sistema",
@@ -112,6 +121,7 @@ def initialize_default_data():
     db = SessionLocal()
     try:
         create_default_users(db)
+        inicializar_diagnosticos_cie10(db)
         logger.info("✅ Inicialización de datos completada")
     except Exception as e:
         logger.error(f"❌ Error al inicializar datos: {str(e)}")
