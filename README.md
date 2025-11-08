@@ -472,24 +472,7 @@ Este proyecto es parte de un trabajo académico.
 
 ## 👥 Autores
 
-**Grupo 04** - Universidad Nacional de Loja
+**Grupo 04**
 
 ---
 
-## 🎯 Roadmap
-
-- [ ] Tests unitarios y de integración
-- [ ] Dockerización
-- [ ] CI/CD con GitHub Actions
-- [ ] Despliegue en producción
-- [ ] App móvil con React Native
-
----
-
-## ⭐ Agradecimientos
-
-Agradecimientos especiales a todos los profesores y compañeros que contribuyeron al desarrollo de este proyecto.
-
----
-
-**Última actualización**: Noviembre 2025
