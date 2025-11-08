@@ -56,6 +56,3 @@ class Paciente(Base):
     
     # Relación 1:N con Recetas
     recetas = relationship("Receta", back_populates="paciente", foreign_keys="Receta.paciente_id")
-    
-    # Relación 1:N con Encuestas
-    encuestas = relationship("EncuestaSatisfaccion", back_populates="paciente", cascade="all, delete-orphan")

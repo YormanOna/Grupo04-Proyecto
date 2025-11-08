@@ -6,6 +6,7 @@ import {
   ArrowLeft, Plus, Trash2, Eye, Download, Mail
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 import { useAuth } from '../../context/AuthContext';
 import consultaService from '../../services/consultaService';
 import citaService from '../../services/citaService';
@@ -24,6 +25,7 @@ const ConsultaMedica = () => {
   const [guardando, setGuardando] = useState(false);
   const [generandoComprobante, setGenerandoComprobante] = useState(false);
   const [vistaActiva, setVistaActiva] = useState('cola'); // 'cola', 'consulta', 'historia'
+  const [tabActiva, setTabActiva] = useState('consulta'); // 'consulta', 'prescripcion', 'seguimiento'
 
   // Datos de la consulta
   const [datosConsulta, setDatosConsulta] = useState({
@@ -118,41 +120,7 @@ const ConsultaMedica = () => {
     }
   }, [mostrarSugerenciasMedicamentos]);
 
-  // RF-003: Autoguardado automático cada 30 segundos en localStorage
-  useEffect(() => {
-    if (!citaSeleccionada || !consultaActual) return;
 
-    // Recuperar draft al iniciar consulta
-    const draftKey = `draft_consulta_${consultaActual.id}`;
-    const draftGuardado = localStorage.getItem(draftKey);
-    
-    if (draftGuardado) {
-      try {
-        const draft = JSON.parse(draftGuardado);
-        setDatosConsulta(draft.datos);
-        if (draft.medicamentos) setMedicamentos(draft.medicamentos);
-        if (draft.indicacionesReceta) setIndicacionesReceta(draft.indicacionesReceta);
-        toast.success('📝 Borrador recuperado automáticamente', { duration: 2000 });
-      } catch (error) {
-        console.error('Error al recuperar draft:', error);
-      }
-    }
-
-    // Configurar autoguardado cada 30 segundos
-    const intervalo = setInterval(() => {
-      const draft = {
-        datos: datosConsulta,
-        medicamentos,
-        indicacionesReceta,
-        timestamp: new Date().toISOString()
-      };
-      localStorage.setItem(draftKey, JSON.stringify(draft));
-      console.log('✅ Autoguardado realizado:', new Date().toLocaleTimeString());
-    }, 30000); // 30 segundos
-
-    // Limpiar intervalo al desmontar
-    return () => clearInterval(intervalo);
-  }, [citaSeleccionada, consultaActual, datosConsulta, medicamentos, indicacionesReceta]);
 
   const cargarPacientesEnCola = async () => {
     setLoading(true);
@@ -176,11 +144,11 @@ const ConsultaMedica = () => {
     setCitaSeleccionada(cita);
     setVistaActiva('consulta');
     
-    // Buscar si ya existe una consulta iniciada
+    // Buscar si ya existe una consulta iniciada (puede ser creada por enfermera o médico)
     try {
       const response = await consultaService.listar({
-        paciente_id: cita.paciente_id,
-        medico_id: user.id
+        paciente_id: cita.paciente_id
+        // NO filtrar por medico_id porque la consulta puede haber sido creada por la enfermera
       });
       
       const consultasHoy = response.data.filter(c => {
@@ -190,7 +158,8 @@ const ConsultaMedica = () => {
       });
 
       if (consultasHoy.length > 0) {
-        const consulta = consultasHoy[0];
+        // Tomar la consulta más reciente (la última creada)
+        const consulta = consultasHoy[consultasHoy.length - 1];
         setConsultaActual(consulta);
         
         // Cargar datos de la consulta existente
@@ -199,6 +168,7 @@ const ConsultaMedica = () => {
           enfermedad_actual: consulta.enfermedad_actual || '',
           examen_fisico: consulta.examen_fisico || '',
           diagnostico: consulta.diagnostico || '',
+          diagnostico_codigo: consulta.diagnostico_codigo || '',
           diagnosticos_secundarios: consulta.diagnosticos_secundarios || '',
           tratamiento: consulta.tratamiento || '',
           indicaciones: consulta.indicaciones || '',
@@ -206,9 +176,12 @@ const ConsultaMedica = () => {
           pronostico: consulta.pronostico || '',
           observaciones: consulta.observaciones || ''
         });
+      } else {
+        setConsultaActual(null);
       }
     } catch (error) {
       console.error('Error al buscar consulta:', error);
+      toast.error('Error al cargar los datos de la consulta');
     }
   };
 
@@ -412,11 +385,6 @@ const ConsultaMedica = () => {
         estado: 'completada'
       });
 
-      // RF-003: Limpiar draft del localStorage al finalizar
-      if (consultaActual?.id) {
-        localStorage.removeItem(`draft_consulta_${consultaActual.id}`);
-      }
-
       // RF-003: Crear cita de seguimiento si está programada
       if (seguimiento.programar) {
         if (!seguimiento.especialidad || !seguimiento.fecha || !seguimiento.hora) {
@@ -425,14 +393,17 @@ const ConsultaMedica = () => {
         }
 
         try {
+          // Combinar fecha y hora en un datetime ISO
+          const fechaHoraISO = `${seguimiento.fecha}T${seguimiento.hora}:00`;
+          
           const citaSeguimiento = {
             paciente_id: citaSeleccionada.paciente_id,
             medico_id: user.id,
-            fecha: seguimiento.fecha,
-            hora: seguimiento.hora,
+            fecha: fechaHoraISO,
+            hora_inicio: seguimiento.hora,
             motivo: `Seguimiento - ${seguimiento.observaciones || 'Control de progreso'}`,
-            estado: 'agendada',
-            tipo: 'Seguimiento'
+            estado: 'programada',
+            tipo_cita: 'seguimiento'
           };
 
           await citaService.crear(citaSeguimiento);
@@ -472,9 +443,19 @@ const ConsultaMedica = () => {
   };
 
   const finalizarSinReceta = async () => {
-    if (!window.confirm('¿Finalizar consulta sin prescribir medicamentos?')) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: '¿Finalizar sin receta?',
+      text: 'Se finalizará la consulta sin prescribir medicamentos',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3b82f6',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '✅ Sí, finalizar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    })
+
+    if (!result.isConfirmed) return
 
     await guardarConsulta();
 
@@ -497,14 +478,17 @@ const ConsultaMedica = () => {
         }
 
         try {
+          // Combinar fecha y hora en un datetime ISO
+          const fechaHoraISO = `${seguimiento.fecha}T${seguimiento.hora}:00`;
+          
           const citaSeguimiento = {
             paciente_id: citaSeleccionada.paciente_id,
             medico_id: user.id,
-            fecha: seguimiento.fecha,
-            hora: seguimiento.hora,
+            fecha: fechaHoraISO,
+            hora_inicio: seguimiento.hora,
             motivo: `Seguimiento - ${seguimiento.observaciones || 'Control de progreso'}`,
-            estado: 'agendada',
-            tipo: 'Seguimiento'
+            estado: 'programada',
+            tipo_cita: 'seguimiento'
           };
 
           await citaService.crear(citaSeguimiento);
@@ -598,7 +582,9 @@ const ConsultaMedica = () => {
   };
 
   const formatearSignosVitales = (consulta) => {
-    if (!consulta?.signos_vitales) return 'No disponible';
+    if (!consulta?.signos_vitales) {
+      return <p className="text-gray-500 text-sm">No disponible</p>;
+    }
     
     const sv = consulta.signos_vitales;
     
@@ -806,7 +792,9 @@ const ConsultaMedica = () => {
                       <Activity className="w-4 h-4 text-emerald-600" />
                       Signos Vitales
                     </p>
-                    {formatearSignosVitales(consultaActual)}
+                    <p className="text-gray-500 text-sm">
+                      ✅ Registrados - Haga clic para ver detalles
+                    </p>
                   </div>
                 </div>
               ))}
@@ -889,12 +877,56 @@ const ConsultaMedica = () => {
         </div>
       </div>
 
-      {/* Formulario de Consulta */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          <FileText className="w-6 h-6 text-blue-600" />
-          Registro de Consulta
-        </h3>
+      {/* Sistema de Pestañas (Tabs) */}
+      <div className="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setTabActiva('consulta')}
+            className={`flex-1 px-6 py-4 font-semibold text-sm md:text-base flex items-center justify-center gap-2 transition-all ${
+              tabActiva === 'consulta'
+                ? 'bg-blue-600 text-white border-b-4 border-blue-700'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+            }`}
+          >
+            <FileText className="w-5 h-5" />
+            <span className="hidden sm:inline">1. Consulta Médica</span>
+            <span className="sm:hidden">Consulta</span>
+          </button>
+          <button
+            onClick={() => setTabActiva('prescripcion')}
+            className={`flex-1 px-6 py-4 font-semibold text-sm md:text-base flex items-center justify-center gap-2 transition-all ${
+              tabActiva === 'prescripcion'
+                ? 'bg-orange-600 text-white border-b-4 border-orange-700'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+            }`}
+          >
+            <Pill className="w-5 h-5" />
+            <span className="hidden sm:inline">2. Prescripción</span>
+            <span className="sm:hidden">Receta</span>
+          </button>
+          <button
+            onClick={() => setTabActiva('finalizacion')}
+            className={`flex-1 px-6 py-4 font-semibold text-sm md:text-base flex items-center justify-center gap-2 transition-all ${
+              tabActiva === 'finalizacion'
+                ? 'bg-green-600 text-white border-b-4 border-green-700'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+            }`}
+          >
+            <Send className="w-5 h-5" />
+            <span className="hidden sm:inline">3. Finalizar</span>
+            <span className="sm:hidden">Finalizar</span>
+          </button>
+        </div>
+
+        {/* Contenido de la pestaña activa */}
+        <div className="p-6">
+          {/* TAB 1: Formulario de Consulta */}
+          {tabActiva === 'consulta' && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <FileText className="w-6 h-6 text-blue-600" />
+                Registro de Consulta Médica
+              </h3>
 
         <div className="grid grid-cols-1 gap-6">
           {/* Motivo de Consulta */}
@@ -968,7 +1000,7 @@ const ConsultaMedica = () => {
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {buscandoCIE10 ? '🔍 Buscando...' : 'RF-003: Búsqueda CIE-10'}
+                    {buscandoCIE10 ? '🔍 Buscando...' : 'Búsqueda CIE-10'}
                   </p>
                   
                   {/* Dropdown de sugerencias */}
@@ -1117,8 +1149,8 @@ const ConsultaMedica = () => {
           </div>
         </div>
 
-        {/* Botón Guardar Consulta */}
-        <div className="mt-6 flex gap-3">
+        {/* Botones de navegación entre tabs */}
+        <div className="mt-6 flex gap-3 justify-between items-center">
           <button
             onClick={guardarConsulta}
             disabled={guardando}
@@ -1127,15 +1159,25 @@ const ConsultaMedica = () => {
             <Save className="w-5 h-5" />
             Guardar Consulta
           </button>
+          
+          <button
+            onClick={() => setTabActiva('prescripcion')}
+            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-semibold transition-all shadow-md"
+          >
+            Siguiente: Prescripción
+            <Pill className="w-5 h-5" />
+          </button>
         </div>
-      </div>
+            </div>
+          )}
 
-      {/* Sección de Prescripción */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          <Pill className="w-6 h-6 text-orange-600" />
-          Prescripción de Medicamentos
-        </h3>
+          {/* TAB 2: Prescripción de Medicamentos */}
+          {tabActiva === 'prescripcion' && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <Pill className="w-6 h-6 text-orange-600" />
+                Prescripción de Medicamentos
+              </h3>
 
         <div className="space-y-4 mb-6">
           {medicamentos.map((med, index) => (
@@ -1448,9 +1490,215 @@ const ConsultaMedica = () => {
           </div>
         )}
 
+        {/* Navegación entre tabs */}
+        <div className="mt-6 flex gap-3 justify-between">
+          <button
+            onClick={() => setTabActiva('consulta')}
+            className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 font-semibold transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Volver a Consulta
+          </button>
+          
+          <button
+            onClick={() => setTabActiva('finalizacion')}
+            className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 flex items-center gap-2 font-semibold transition-all shadow-md"
+          >
+            Siguiente: Finalizar
+            <Send className="w-5 h-5" />
+          </button>
+        </div>
+
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
-          * La receta se enviará automáticamente a farmacia para su dispensación
+          * Complete todos los medicamentos antes de continuar
         </p>
+            </div>
+          )}
+
+          {/* TAB 3: Finalización y Acciones */}
+          {tabActiva === 'finalizacion' && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <Send className="w-6 h-6 text-green-600" />
+                Finalizar Consulta
+              </h3>
+
+              <div className="space-y-6">
+                {/* Resumen de la consulta */}
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-6 border-2 border-blue-200">
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    Resumen de la Consulta
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600 font-medium">Diagnóstico:</p>
+                      <p className="text-gray-800">{datosConsulta.diagnostico || 'No especificado'}</p>
+                    </div>
+                    {datosConsulta.diagnostico_codigo && (
+                      <div>
+                        <p className="text-gray-600 font-medium">Código CIE-10:</p>
+                        <p className="text-gray-800 font-mono">{datosConsulta.diagnostico_codigo}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-gray-600 font-medium">Tratamiento:</p>
+                      <p className="text-gray-800">{datosConsulta.tratamiento || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 font-medium">Pronóstico:</p>
+                      <p className="text-gray-800">{datosConsulta.pronostico || 'No especificado'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resumen de medicamentos */}
+                {medicamentos.some(m => m.nombre.trim() !== '') && (
+                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-6 border-2 border-orange-200">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <Pill className="w-5 h-5 text-orange-600" />
+                      Medicamentos Prescritos ({medicamentos.filter(m => m.nombre.trim() !== '').length})
+                    </h4>
+                    <div className="space-y-2">
+                      {medicamentos.filter(m => m.nombre.trim() !== '').map((med, index) => (
+                        <div key={index} className="bg-white rounded-lg p-3 border border-orange-200">
+                          <p className="font-semibold text-gray-800">{index + 1}. {med.nombre}</p>
+                          <p className="text-sm text-gray-600">
+                            {med.dosis} | {med.frecuencia} | {med.duracion} | Vía: {med.via}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    {indicacionesReceta && (
+                      <div className="mt-3 p-3 bg-white rounded-lg border border-orange-200">
+                        <p className="text-sm font-medium text-gray-700">Indicaciones:</p>
+                        <p className="text-sm text-gray-600">{indicacionesReceta}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* RF-003: Seguimiento programado */}
+                {seguimiento.programar && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-blue-200">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      Cita de Seguimiento Programada
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-gray-600 font-medium">Especialidad:</p>
+                        <p className="text-gray-800">{seguimiento.especialidad}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 font-medium">Fecha:</p>
+                        <p className="text-gray-800">{new Date(seguimiento.fecha).toLocaleDateString('es-ES')}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 font-medium">Hora:</p>
+                        <p className="text-gray-800">{seguimiento.hora}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 font-medium">Observaciones:</p>
+                        <p className="text-gray-800">{seguimiento.observaciones || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botones de finalización */}
+                <div className="bg-white rounded-lg p-6 border-2 border-gray-200">
+                  <h4 className="font-semibold text-gray-800 mb-4">Acciones de Finalización</h4>
+                  
+                  <div className="space-y-3">
+                    <button
+                      onClick={finalizarYPrescribir}
+                      disabled={guardando || medicamentos.filter(m => m.nombre.trim() !== '').length === 0}
+                      className="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-4 rounded-lg hover:from-orange-700 hover:to-orange-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold transition-all shadow-lg"
+                    >
+                      {guardando ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-5 h-5" />
+                          Finalizar y Enviar Receta a Farmacia
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={finalizarSinReceta}
+                      disabled={guardando}
+                      className="w-full px-6 py-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold transition-colors"
+                    >
+                      <Save className="w-5 h-5" />
+                      Finalizar Sin Prescribir Medicamentos
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
+                    * Al finalizar, la consulta se guardará y la cita se marcará como completada
+                  </p>
+                </div>
+
+                {/* RF-003: Comprobante de asistencia */}
+                {consultaActual && (
+                  <div className="bg-green-50 rounded-lg p-6 border-2 border-green-200">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-green-600" />
+                      Comprobante de Asistencia
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <button
+                        onClick={() => generarComprobante(consultaActual.id, false)}
+                        disabled={generandoComprobante}
+                        className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold transition-colors shadow-md"
+                      >
+                        {generandoComprobante ? (
+                          <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                            Generando...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-5 h-5" />
+                            Descargar PDF
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => generarComprobante(consultaActual.id, true)}
+                        disabled={generandoComprobante}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold transition-colors shadow-md"
+                      >
+                        <Mail className="w-5 h-5" />
+                        Enviar por Email
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3 text-center">
+                      El comprobante incluye datos de la consulta, paciente y médico tratante
+                    </p>
+                  </div>
+                )}
+
+                {/* Navegación */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setTabActiva('prescripcion')}
+                    className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 font-semibold transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                    Volver a Prescripción
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

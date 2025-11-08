@@ -268,7 +268,7 @@ const CitaForm = () => {
             </div>
             <div>
               <h2 className="text-3xl font-bold text-gray-800">Agendar Cita Médica</h2>
-              <p className="text-gray-600">Proceso de agendamiento paso a paso (RF-001)</p>
+              <p className="text-gray-600">Proceso de agendamiento paso a paso</p>
             </div>
           </div>
           <button

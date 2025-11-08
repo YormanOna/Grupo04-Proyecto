@@ -26,6 +26,7 @@ class AuditoriaResponse(AuditoriaBase):
     fecha_hora: datetime
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 class AuditoriaFilter(BaseModel):

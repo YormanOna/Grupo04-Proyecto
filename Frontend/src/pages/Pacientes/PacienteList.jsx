@@ -3,6 +3,7 @@ import { getPacientes, deletePaciente, buscarPacientes } from '../../services/pa
 import { Link, useNavigate } from 'react-router-dom'
 import { Users, Plus, Search, Edit, Trash2, Eye, Phone, Mail, FileText, AlertCircle, CheckCircle, Clock, UserPlus } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Swal from 'sweetalert2'
 import { useAuth } from '../../context/AuthContext'
 
 const PacienteList = () => {
@@ -74,18 +75,50 @@ const PacienteList = () => {
   }
 
   const handleDelete = async (id, nombre) => {
-    if (window.confirm(`¿Estás seguro de eliminar al paciente ${nombre}?`)) {
-      try {
-        await deletePaciente(id)
-        toast.success('Paciente eliminado exitosamente')
-        loadPacientes()
-      } catch (error) {
-        console.error('Error deleting patient:', error)
-        if (error.response?.status === 403) {
-          toast.error('No tienes permisos para eliminar pacientes')
-        } else {
-          toast.error('Error al eliminar paciente')
-        }
+    const result = await Swal.fire({
+      title: '¿Eliminar paciente?',
+      html: `
+        <p class="text-gray-600 mb-3">Esta acción eliminará permanentemente al paciente:</p>
+        <p class="text-lg font-bold text-gray-800 mb-3">${nombre}</p>
+        <p class="text-sm text-red-600">⚠️ Esta acción no se puede deshacer</p>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '🗑️ Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    })
+
+    if (!result.isConfirmed) return
+
+    try {
+      await deletePaciente(id)
+      Swal.fire({
+        icon: 'success',
+        title: '¡Eliminado!',
+        text: 'Paciente eliminado exitosamente',
+        timer: 2000,
+        showConfirmButton: false
+      })
+      loadPacientes()
+    } catch (error) {
+      console.error('Error deleting patient:', error)
+      if (error.response?.status === 403) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Sin permisos',
+          text: 'No tienes permisos para eliminar pacientes',
+          confirmButtonColor: '#ef4444'
+        })
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo eliminar el paciente',
+          confirmButtonColor: '#ef4444'
+        })
       }
     }
   }
@@ -317,7 +350,7 @@ const PacienteList = () => {
                         <button 
                           onClick={() => navigate(`/expediente?query=${paciente.historia?.identificador || paciente.cedula}`)}
                           className="p-2 text-teal-600 hover:bg-teal-100 rounded-lg transition-all hover:scale-110 active:scale-95" 
-                          title="Ver expediente clínico (RF-002)"
+                          title="Ver expediente clínico"
                         >
                           <FileText className="w-4 h-4" />
                         </button>

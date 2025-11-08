@@ -91,8 +91,9 @@ def generar_comprobante_consulta(
     class CitaTemp:
         def __init__(self, cons):
             self.id = cons.id
-            self.fecha = cons.fecha
-            self.hora_inicio = cons.fecha.strftime("%H:%M") if cons.fecha else None
+            self.fecha = cons.fecha_consulta
+            self.hora_inicio = cons.fecha_consulta.strftime("%H:%M") if cons.fecha_consulta else None
+            self.hora_fin = None  # Las consultas finalizadas no tienen hora_fin específica
             self.estado = "completada"
             self.sala_asignada = None
             self.tipo_cita = "consulta"
@@ -115,10 +116,10 @@ def generar_comprobante_consulta(
                 cuerpo = f"""
                 <h2>Comprobante de Asistencia a Consulta Médica</h2>
                 <p>Estimado(a) {paciente.nombre} {paciente.apellido},</p>
-                <p>Adjuntamos el comprobante de su consulta médica realizada el {consulta.fecha.strftime('%d/%m/%Y')}.</p>
+                <p>Adjuntamos el comprobante de su consulta médica realizada el {consulta.fecha_consulta.strftime('%d/%m/%Y')}.</p>
                 <p><strong>Detalles de la consulta:</strong></p>
                 <ul>
-                    <li><strong>Fecha:</strong> {consulta.fecha.strftime('%d/%m/%Y %H:%M')}</li>
+                    <li><strong>Fecha:</strong> {consulta.fecha_consulta.strftime('%d/%m/%Y %H:%M')}</li>
                     <li><strong>Médico:</strong> Dr(a). {medico.nombre} {medico.apellido if medico else 'No disponible'}</li>
                     <li><strong>Motivo:</strong> {consulta.motivo_consulta}</li>
                 </ul>

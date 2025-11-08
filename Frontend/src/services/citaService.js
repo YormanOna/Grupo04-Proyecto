@@ -137,6 +137,7 @@ export default {
   getCitas,
   getCita,
   createCita,
+  crear: createCita, // Alias para compatibilidad
   actualizar,
   updateCita,
   deleteCita,

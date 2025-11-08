@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -6,7 +6,9 @@ const useWebSocket = () => {
   const { user } = useAuth()
   const [isConnected, setIsConnected] = useState(false)
   const [notifications, setNotifications] = useState([])
+  const [lastUpdate, setLastUpdate] = useState(null) // Para triggear recargas
   const ws = useRef(null)
+  const listeners = useRef(new Map()) // Para callbacks específicos
 
   useEffect(() => {
     if (!user) return
@@ -34,6 +36,20 @@ const useWebSocket = () => {
         // Agregar a notificaciones
         setNotifications(prev => [...prev, data])
 
+        // Actualizar timestamp para triggear recargas
+        setLastUpdate({ type: data.type, timestamp: Date.now(), data })
+
+        // Llamar listeners registrados para este tipo de evento
+        if (listeners.current.has(data.type)) {
+          listeners.current.get(data.type).forEach(callback => {
+            try {
+              callback(data)
+            } catch (err) {
+              console.error('Error en listener:', err)
+            }
+          })
+        }
+
         // Mostrar toast según el tipo de mensaje
         switch (data.type) {
           case 'connection_established':
@@ -45,22 +61,37 @@ const useWebSocket = () => {
               duration: 10000,
               icon: '👨‍⚕️'
             })
-            // Reproducir sonido si está disponible
             playNotificationSound()
             break
           
           case 'cita_actualizada':
+          case 'cita_creada':
             toast.info(data.title + ': ' + data.message, {
               duration: 5000,
               icon: '📅'
             })
+            // Triggear recarga de citas
+            triggerReload('citas')
             break
           
           case 'receta_lista':
+          case 'receta_creada':
             toast.success(data.title + ': ' + data.message, {
               duration: 7000,
               icon: '💊'
             })
+            // Triggear recarga de recetas
+            triggerReload('recetas')
+            break
+          
+          case 'consulta_creada':
+          case 'consulta_actualizada':
+            toast.info(data.title || 'Consulta actualizada', {
+              duration: 5000,
+              icon: '📋'
+            })
+            // Triggear recarga de consultas
+            triggerReload('consultas')
             break
           
           case 'notificacion_medico':
@@ -77,6 +108,13 @@ const useWebSocket = () => {
       } catch (error) {
         console.error('Error procesando mensaje WebSocket:', error)
       }
+    }
+
+    const triggerReload = (entity) => {
+      // Disparar evento personalizado del DOM
+      window.dispatchEvent(new CustomEvent(`reload:${entity}`, { 
+        detail: { timestamp: Date.now() } 
+      }))
     }
 
     ws.current.onerror = (error) => {
@@ -116,11 +154,32 @@ const useWebSocket = () => {
     setNotifications([])
   }
 
+  // Registrar listener para un tipo específico de evento
+  const onEvent = useCallback((eventType, callback) => {
+    if (!listeners.current.has(eventType)) {
+      listeners.current.set(eventType, [])
+    }
+    listeners.current.get(eventType).push(callback)
+
+    // Retornar función de cleanup
+    return () => {
+      const callbacks = listeners.current.get(eventType)
+      if (callbacks) {
+        const index = callbacks.indexOf(callback)
+        if (index > -1) {
+          callbacks.splice(index, 1)
+        }
+      }
+    }
+  }, [])
+
   return {
     isConnected,
     notifications,
     sendMessage,
-    clearNotifications
+    clearNotifications,
+    onEvent,
+    lastUpdate
   }
 }
 

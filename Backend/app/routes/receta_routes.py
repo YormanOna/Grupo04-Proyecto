@@ -38,7 +38,7 @@ def crear(
     """
     return crear_receta(db, payload)
 
-@router.get("/", response_model=List[RecetaOut])
+@router.get("/")
 def listar(
     paciente_id: Optional[int] = Query(None, description="Filtrar por paciente"),
     estado: Optional[str] = Query(None, description="Filtrar por estado (pendiente, dispensada, parcial, cancelada)"),
@@ -46,7 +46,7 @@ def listar(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Lista recetas con filtros opcionales
+    Lista recetas con filtros opcionales incluyendo información del paciente, médico y farmacéutico
     """
     return listar_recetas(db, paciente_id, estado)
 

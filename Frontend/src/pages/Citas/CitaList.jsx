@@ -3,7 +3,9 @@ import { getCitas, deleteCita, updateCita } from '../../services/citaService'
 import { Link, useNavigate } from 'react-router-dom'
 import { Calendar, Plus, Search, Clock, User, Stethoscope, Edit, Trash2, CheckCircle, XCircle, Activity } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Swal from 'sweetalert2'
 import { useAuth } from '../../context/AuthContext'
+import useWebSocket from '../../hooks/useWebSocket'
 
 const CitaList = () => {
   const [citas, setCitas] = useState([])
@@ -12,6 +14,7 @@ const CitaList = () => {
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { lastUpdate } = useWebSocket()
   
   const isAdmin = user?.cargo === 'Administrador' || user?.cargo === 'Admin General'
   const isNurse = user?.cargo === 'Enfermera'
@@ -20,6 +23,14 @@ const CitaList = () => {
   useEffect(() => {
     loadCitas()
   }, [])
+
+  // Recargar automáticamente cuando hay cambios en citas vía WebSocket
+  useEffect(() => {
+    if (lastUpdate && (lastUpdate.type === 'cita_creada' || lastUpdate.type === 'cita_actualizada')) {
+      console.log('🔄 Recargando lista de citas por WebSocket:', lastUpdate.type)
+      loadCitas()
+    }
+  }, [lastUpdate])
 
   const loadCitas = async () => {
     try {
@@ -34,18 +45,46 @@ const CitaList = () => {
   }
 
   const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar esta cita?')) {
-      try {
-        await deleteCita(id)
-        toast.success('Cita eliminada exitosamente')
-        loadCitas()
-      } catch (error) {
-        console.error('Error deleting appointment:', error)
-        if (error.response?.status === 403) {
-          toast.error('No tienes permisos para eliminar citas')
-        } else {
-          toast.error('Error al eliminar cita')
-        }
+    const result = await Swal.fire({
+      title: '¿Eliminar cita?',
+      text: 'Esta acción no se puede deshacer',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '🗑️ Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    })
+
+    if (!result.isConfirmed) return
+
+    try {
+      await deleteCita(id)
+      Swal.fire({
+        icon: 'success',
+        title: '¡Eliminada!',
+        text: 'Cita eliminada exitosamente',
+        timer: 2000,
+        showConfirmButton: false
+      })
+      loadCitas()
+    } catch (error) {
+      console.error('Error deleting appointment:', error)
+      if (error.response?.status === 403) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Sin permisos',
+          text: 'No tienes permisos para eliminar citas',
+          confirmButtonColor: '#ef4444'
+        })
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo eliminar la cita',
+          confirmButtonColor: '#ef4444'
+        })
       }
     }
   }

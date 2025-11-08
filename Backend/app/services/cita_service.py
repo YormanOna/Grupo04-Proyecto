@@ -10,6 +10,7 @@ from app.utils.email_utils import (
     enviar_cancelacion_cita,
     enviar_reprogramacion_cita
 )
+from app.core.websocket import manager
 from fastapi import HTTPException
 import asyncio
 from datetime import datetime, timedelta, date
@@ -72,6 +73,17 @@ def create_cita(db: Session, payload: CitaCreate):
     db.add(c)
     db.commit()
     db.refresh(c)
+    
+    # Enviar notificación WebSocket a todos los usuarios
+    try:
+        asyncio.create_task(manager.broadcast({
+            "type": "cita_creada",
+            "title": "Nueva cita",
+            "message": f"Nueva cita registrada: {paciente.nombre} {paciente.apellido}",
+            "data": {"cita_id": c.id, "paciente_id": c.paciente_id}
+        }))
+    except Exception as e:
+        print(f"Error enviando notificación WebSocket: {e}")
     
     # Enviar email de confirmación de forma ASÍNCRONA (no bloquear la respuesta)
     # Si falla el email, solo se loguea el error pero NO se hace rollback de la cita
@@ -227,6 +239,17 @@ def update_cita(db: Session, cita_id: int, payload: CitaUpdate):
     
     db.commit()
     db.refresh(cita)
+    
+    # Enviar notificación WebSocket sobre actualización
+    try:
+        asyncio.create_task(manager.broadcast({
+            "type": "cita_actualizada",
+            "title": "Cita actualizada",
+            "message": f"La cita de {paciente.nombre if paciente else 'un paciente'} ha sido actualizada",
+            "data": {"cita_id": cita.id, "nuevo_estado": cita.estado}
+        }))
+    except Exception as e:
+        print(f"Error enviando notificación WebSocket: {e}")
     
     # Enviar notificaciones por email según el caso (RF-001)
     if paciente and paciente.email:

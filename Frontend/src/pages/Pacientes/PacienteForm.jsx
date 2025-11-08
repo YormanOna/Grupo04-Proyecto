@@ -299,10 +299,28 @@ const PacienteForm = ({ mode = 'create' }) => {
         }, 2000)
       }
     } catch (error) {
-      const errorMsg = error.response?.data?.detail || 
-        (isEdit ? 'Error al actualizar paciente' : 'Error al registrar paciente')
-      toast.error(errorMsg)
       console.error('Error:', error)
+      
+      // Manejar errores de validación 422
+      if (error.response?.status === 422) {
+        const validationErrors = error.response?.data?.detail
+        if (Array.isArray(validationErrors)) {
+          // Mostrar cada error de validación
+          validationErrors.forEach(err => {
+            const field = err.loc?.[1] || 'campo'
+            const message = err.msg || 'Error de validación'
+            toast.error(`${field}: ${message}`)
+          })
+        } else if (typeof validationErrors === 'string') {
+          toast.error(validationErrors)
+        } else {
+          toast.error('Error de validación en los datos del formulario')
+        }
+      } else {
+        const errorMsg = error.response?.data?.detail || 
+          (isEdit ? 'Error al actualizar paciente' : 'Error al registrar paciente')
+        toast.error(errorMsg)
+      }
     } finally {
       setIsLoading(false)
     }

@@ -4,6 +4,7 @@ from typing import List, Optional
 from app.core.database import SessionLocal
 from app.core.permissions import any_authenticated, get_current_user
 from app.schemas.historia_schema import HistoriaCreate, HistoriaOut
+from app.schemas.expediente_schema import ExpedienteCompletoOut
 from app.services.historia_service import (
     create_historia, 
     list_historias, 
@@ -38,7 +39,7 @@ def one(historia_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Historia no encontrada")
     return h
 
-@router.get("/expediente/buscar")
+@router.get("/expediente/buscar", response_model=ExpedienteCompletoOut)
 def buscar_expediente(
     query: str = Query(..., description="Número de historia clínica o cédula del paciente"),
     db: Session = Depends(get_db),
@@ -74,78 +75,93 @@ def buscar_expediente(
     
     if cargo == "Administrador":
         # Personal administrativo: solo datos de identificación y afiliación
-        return {
-            "paciente": {
-                "id": expediente["paciente"].id,
-                "nombre": expediente["paciente"].nombre,
-                "apellido": expediente["paciente"].apellido,
-                "cedula": expediente["paciente"].cedula,
-                "email": expediente["paciente"].email,
-                "telefono": expediente["paciente"].telefono,
-                "fecha_nacimiento": expediente["paciente"].fecha_nacimiento,
-                "genero": expediente["paciente"].genero,
-                "tipo_seguro": expediente["paciente"].tipo_seguro,
-                "aseguradora": expediente["paciente"].aseguradora,
-                "numero_poliza": expediente["paciente"].numero_poliza,
-                "fecha_vigencia_poliza": expediente["paciente"].fecha_vigencia_poliza,
-            },
-            "historia": expediente["historia"],
-            "consultas": [],
-            "recetas": [],
-            "mensaje": "Acceso limitado: Personal administrativo"
-        }
+        return ExpedienteCompletoOut(
+            paciente=expediente["paciente"],
+            historia=expediente["historia"],
+            consultas=[],
+            recetas=[],
+            total_consultas=0,
+            total_recetas=0,
+            mensaje="Acceso limitado: Personal administrativo"
+        )
     
     elif cargo == "Enfermera":
         # Enfermería: identificación + alergias + antecedentes + signos vitales
-        return {
-            "paciente": expediente["paciente"],
-            "historia": expediente["historia"],
-            "consultas": [
-                {
-                    "id": c.id,
-                    "fecha_consulta": c.fecha_consulta,
-                    "signos_vitales": c.signos_vitales,
-                    "medico": {
-                        "nombre": c.medico_empleado.nombre if c.medico_empleado else None,
-                        "apellido": c.medico_empleado.apellido if c.medico_empleado else None
-                    }
-                } for c in expediente["consultas"]
-            ],
-            "recetas": [],
-            "total_consultas": expediente["total_consultas"],
-            "mensaje": "Acceso limitado: Personal de enfermería"
-        }
+        consultas_enfermera = []
+        for c in expediente["consultas"]:
+            consultas_enfermera.append({
+                "id": c.id,
+                "fecha_consulta": c.fecha_consulta,
+                "signos_vitales": c.signos_vitales,
+                "medico": {
+                    "nombre": c.medico_empleado.nombre if c.medico_empleado else None,
+                    "apellido": c.medico_empleado.apellido if c.medico_empleado else None
+                }
+            })
+        
+        return ExpedienteCompletoOut(
+            paciente=expediente["paciente"],
+            historia=expediente["historia"],
+            consultas=consultas_enfermera,
+            recetas=[],
+            total_consultas=expediente["total_consultas"],
+            total_recetas=0,
+            mensaje="Acceso limitado: Personal de enfermería"
+        )
     
     elif cargo == "Farmaceutico":
         # Farmacéutico: identificación + alergias + diagnósticos + prescripciones
-        return {
-            "paciente": {
-                "id": expediente["paciente"].id,
-                "nombre": expediente["paciente"].nombre,
-                "apellido": expediente["paciente"].apellido,
-                "cedula": expediente["paciente"].cedula,
-                "alergias": expediente["paciente"].alergias,
-                "grupo_sanguineo": expediente["paciente"].grupo_sanguineo,
-            },
-            "historia": expediente["historia"],
-            "consultas": [
-                {
-                    "id": c.id,
-                    "fecha_consulta": c.fecha_consulta,
-                    "diagnostico": c.diagnostico,
-                    "diagnostico_codigo": c.diagnostico_codigo
-                } for c in expediente["consultas"]
-            ],
-            "recetas": expediente["recetas"],
-            "total_recetas": expediente["total_recetas"],
-            "mensaje": "Acceso limitado: Personal farmacéutico"
-        }
+        consultas_farmaceutico = []
+        for c in expediente["consultas"]:
+            consultas_farmaceutico.append({
+                "id": c.id,
+                "fecha_consulta": c.fecha_consulta,
+                "diagnostico": c.diagnostico,
+                "diagnostico_codigo": c.diagnostico_codigo
+            })
+        
+        return ExpedienteCompletoOut(
+            paciente=expediente["paciente"],
+            historia=expediente["historia"],
+            consultas=consultas_farmaceutico,
+            recetas=expediente["recetas"],
+            total_consultas=0,
+            total_recetas=expediente["total_recetas"],
+            mensaje="Acceso limitado: Personal farmacéutico"
+        )
     
     else:
         # Médicos y Admin General: acceso completo
-        return expediente
+        consultas_completas = []
+        for c in expediente["consultas"]:
+            consultas_completas.append({
+                "id": c.id,
+                "fecha_consulta": c.fecha_consulta,
+                "motivo_consulta": c.motivo_consulta,
+                "enfermedad_actual": c.enfermedad_actual,
+                "examen_fisico": c.examen_fisico,
+                "diagnostico": c.diagnostico,
+                "diagnostico_codigo": c.diagnostico_codigo,
+                "tratamiento": c.tratamiento,
+                "indicaciones": c.indicaciones,
+                "observaciones": c.observaciones,
+                "signos_vitales": c.signos_vitales,
+                "medico": {
+                    "nombre": c.medico_empleado.nombre if c.medico_empleado else None,
+                    "apellido": c.medico_empleado.apellido if c.medico_empleado else None
+                } if c.medico_empleado else None
+            })
+        
+        return ExpedienteCompletoOut(
+            paciente=expediente["paciente"],
+            historia=expediente["historia"],
+            consultas=consultas_completas,
+            recetas=expediente["recetas"],
+            total_consultas=expediente["total_consultas"],
+            total_recetas=expediente["total_recetas"]
+        )
 
-@router.get("/expediente/paciente/{paciente_id}")
+@router.get("/expediente/paciente/{paciente_id}", response_model=ExpedienteCompletoOut)
 def obtener_expediente(
     paciente_id: int,
     db: Session = Depends(get_db),
@@ -179,68 +195,86 @@ def obtener_expediente(
     cargo = current_user["cargo"]
     
     if cargo == "Administrador":
-        return {
-            "paciente": {
-                "id": expediente["paciente"].id,
-                "nombre": expediente["paciente"].nombre,
-                "apellido": expediente["paciente"].apellido,
-                "cedula": expediente["paciente"].cedula,
-                "email": expediente["paciente"].email,
-                "telefono": expediente["paciente"].telefono,
-                "fecha_nacimiento": expediente["paciente"].fecha_nacimiento,
-                "genero": expediente["paciente"].genero,
-                "tipo_seguro": expediente["paciente"].tipo_seguro,
-                "aseguradora": expediente["paciente"].aseguradora,
-                "numero_poliza": expediente["paciente"].numero_poliza,
-                "fecha_vigencia_poliza": expediente["paciente"].fecha_vigencia_poliza,
-            },
-            "historia": expediente["historia"],
-            "consultas": [],
-            "recetas": [],
-            "mensaje": "Acceso limitado: Personal administrativo"
-        }
+        return ExpedienteCompletoOut(
+            paciente=expediente["paciente"],
+            historia=expediente["historia"],
+            consultas=[],
+            recetas=[],
+            total_consultas=0,
+            total_recetas=0,
+            mensaje="Acceso limitado: Personal administrativo"
+        )
+    
     elif cargo == "Enfermera":
-        return {
-            "paciente": expediente["paciente"],
-            "historia": expediente["historia"],
-            "consultas": [
-                {
-                    "id": c.id,
-                    "fecha_consulta": c.fecha_consulta,
-                    "signos_vitales": c.signos_vitales,
-                    "medico": {
-                        "nombre": c.medico_empleado.nombre if c.medico_empleado else None,
-                        "apellido": c.medico_empleado.apellido if c.medico_empleado else None
-                    }
-                } for c in expediente["consultas"]
-            ],
-            "recetas": [],
-            "total_consultas": expediente["total_consultas"],
-            "mensaje": "Acceso limitado: Personal de enfermería"
-        }
+        consultas_enfermera = []
+        for c in expediente["consultas"]:
+            consultas_enfermera.append({
+                "id": c.id,
+                "fecha_consulta": c.fecha_consulta,
+                "signos_vitales": c.signos_vitales,
+                "medico": {
+                    "nombre": c.medico_empleado.nombre if c.medico_empleado else None,
+                    "apellido": c.medico_empleado.apellido if c.medico_empleado else None
+                }
+            })
+        
+        return ExpedienteCompletoOut(
+            paciente=expediente["paciente"],
+            historia=expediente["historia"],
+            consultas=consultas_enfermera,
+            recetas=[],
+            total_consultas=expediente["total_consultas"],
+            total_recetas=0,
+            mensaje="Acceso limitado: Personal de enfermería"
+        )
+    
     elif cargo == "Farmaceutico":
-        return {
-            "paciente": {
-                "id": expediente["paciente"].id,
-                "nombre": expediente["paciente"].nombre,
-                "apellido": expediente["paciente"].apellido,
-                "cedula": expediente["paciente"].cedula,
-                "alergias": expediente["paciente"].alergias,
-                "grupo_sanguineo": expediente["paciente"].grupo_sanguineo,
-            },
-            "historia": expediente["historia"],
-            "consultas": [
-                {
-                    "id": c.id,
-                    "fecha_consulta": c.fecha_consulta,
-                    "diagnostico": c.diagnostico,
-                    "diagnostico_codigo": c.diagnostico_codigo
-                } for c in expediente["consultas"]
-            ],
-            "recetas": expediente["recetas"],
-            "total_recetas": expediente["total_recetas"],
-            "mensaje": "Acceso limitado: Personal farmacéutico"
-        }
+        consultas_farmaceutico = []
+        for c in expediente["consultas"]:
+            consultas_farmaceutico.append({
+                "id": c.id,
+                "fecha_consulta": c.fecha_consulta,
+                "diagnostico": c.diagnostico,
+                "diagnostico_codigo": c.diagnostico_codigo
+            })
+        
+        return ExpedienteCompletoOut(
+            paciente=expediente["paciente"],
+            historia=expediente["historia"],
+            consultas=consultas_farmaceutico,
+            recetas=expediente["recetas"],
+            total_consultas=0,
+            total_recetas=expediente["total_recetas"],
+            mensaje="Acceso limitado: Personal farmacéutico"
+        )
+    
     else:
         # Médicos y Admin General: acceso completo
-        return expediente
+        consultas_completas = []
+        for c in expediente["consultas"]:
+            consultas_completas.append({
+                "id": c.id,
+                "fecha_consulta": c.fecha_consulta,
+                "motivo_consulta": c.motivo_consulta,
+                "enfermedad_actual": c.enfermedad_actual,
+                "examen_fisico": c.examen_fisico,
+                "diagnostico": c.diagnostico,
+                "diagnostico_codigo": c.diagnostico_codigo,
+                "tratamiento": c.tratamiento,
+                "indicaciones": c.indicaciones,
+                "observaciones": c.observaciones,
+                "signos_vitales": c.signos_vitales,
+                "medico": {
+                    "nombre": c.medico_empleado.nombre if c.medico_empleado else None,
+                    "apellido": c.medico_empleado.apellido if c.medico_empleado else None
+                } if c.medico_empleado else None
+            })
+        
+        return ExpedienteCompletoOut(
+            paciente=expediente["paciente"],
+            historia=expediente["historia"],
+            consultas=consultas_completas,
+            recetas=expediente["recetas"],
+            total_consultas=expediente["total_consultas"],
+            total_recetas=expediente["total_recetas"]
+        )

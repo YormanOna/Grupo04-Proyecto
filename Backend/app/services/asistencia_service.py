@@ -3,15 +3,22 @@ from app.models.asistencia import Asistencia
 from app.schemas.asistencia_schema import AsistenciaCreate
 from datetime import datetime
 from typing import Optional
+import pytz
+
+# Zona horaria de Ecuador
+ECUADOR_TZ = pytz.timezone('America/Guayaquil')
 
 def registrar_entrada(db: Session, empleado_id: int, observaciones: Optional[str] = None):
     """
     Registra la entrada de un empleado
     """
+    # Obtener hora actual de Ecuador
+    fecha_actual = datetime.now(ECUADOR_TZ)
+    
     asistencia = Asistencia(
         empleado_id=empleado_id,
         tipo_registro="entrada",
-        fecha_entrada=datetime.utcnow(),
+        fecha_entrada=fecha_actual,
         observaciones=observaciones
     )
     db.add(asistencia)
@@ -24,6 +31,9 @@ def registrar_salida(db: Session, empleado_id: int, observaciones: Optional[str]
     Registra la salida de un empleado
     Busca el último registro de entrada sin salida
     """
+    # Obtener hora actual de Ecuador
+    fecha_actual = datetime.now(ECUADOR_TZ)
+    
     # Buscar última entrada sin salida
     ultima_entrada = db.query(Asistencia).filter(
         Asistencia.empleado_id == empleado_id,
@@ -31,7 +41,7 @@ def registrar_salida(db: Session, empleado_id: int, observaciones: Optional[str]
     ).order_by(Asistencia.fecha_entrada.desc()).first()
     
     if ultima_entrada:
-        ultima_entrada.fecha_salida = datetime.utcnow()
+        ultima_entrada.fecha_salida = fecha_actual
         if observaciones:
             ultima_entrada.observaciones = observaciones
         db.commit()
@@ -42,8 +52,8 @@ def registrar_salida(db: Session, empleado_id: int, observaciones: Optional[str]
     asistencia = Asistencia(
         empleado_id=empleado_id,
         tipo_registro="salida",
-        fecha_entrada=datetime.utcnow(),
-        fecha_salida=datetime.utcnow(),
+        fecha_entrada=fecha_actual,
+        fecha_salida=fecha_actual,
         observaciones=observaciones or "Salida sin entrada registrada"
     )
     db.add(asistencia)

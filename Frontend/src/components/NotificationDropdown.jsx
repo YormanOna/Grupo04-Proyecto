@@ -11,6 +11,11 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
   const dropdownRef = useRef(null)
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(false)
+  const [dismissedNotifications, setDismissedNotifications] = useState(() => {
+    // Cargar notificaciones eliminadas del localStorage
+    const stored = localStorage.getItem('dismissedNotifications')
+    return stored ? JSON.parse(stored) : []
+  })
 
   // Cargar notificaciones reales según el rol
   useEffect(() => {
@@ -18,6 +23,11 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
       loadRealNotifications()
     }
   }, [isOpen, user])
+
+  // Guardar notificaciones eliminadas en localStorage
+  useEffect(() => {
+    localStorage.setItem('dismissedNotifications', JSON.stringify(dismissedNotifications))
+  }, [dismissedNotifications])
 
   const loadRealNotifications = async () => {
     setLoading(true)
@@ -172,9 +182,12 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
         }
       }
 
-      // Si no hay notificaciones específicas del rol, mostrar mensaje general
-      if (notifs.length === 0) {
-        notifs.push({
+      // Filtrar notificaciones eliminadas
+      const filteredNotifs = notifs.filter(n => !dismissedNotifications.includes(n.id))
+
+      // Si no hay notificaciones después de filtrar, mostrar mensaje general
+      if (filteredNotifs.length === 0) {
+        filteredNotifs.push({
           id: 'no-notifications',
           type: 'info',
           icon: Bell,
@@ -185,7 +198,7 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
         })
       }
 
-      setNotifications(notifs)
+      setNotifications(filteredNotifs)
     } catch (error) {
       console.error('Error cargando notificaciones:', error)
       toast.error('Error al cargar notificaciones')
@@ -222,7 +235,21 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
   }
 
   const deleteNotification = (id) => {
+    // Agregar a la lista de notificaciones eliminadas
+    if (!dismissedNotifications.includes(id)) {
+      setDismissedNotifications([...dismissedNotifications, id])
+    }
+    // Quitar de la lista actual
     setNotifications(notifications.filter(notif => notif.id !== id))
+    toast.success('Notificación eliminada', { duration: 2000 })
+  }
+
+  const clearDismissedNotifications = () => {
+    // Limpiar notificaciones eliminadas (útil para testing o reset)
+    setDismissedNotifications([])
+    localStorage.removeItem('dismissedNotifications')
+    loadRealNotifications()
+    toast.success('Historial de notificaciones limpiado')
   }
 
   const unreadCount = notifications.filter(n => n.unread).length

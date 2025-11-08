@@ -9,6 +9,8 @@ from app.schemas.consulta_schema import ConsultaCreate, ConsultaUpdate
 import json
 
 def create_consulta(db: Session, payload: ConsultaCreate):
+    from app.models.paciente import Paciente
+    
     # Obtener cita para extraer paciente_id e historia_id
     historia_id = payload.historia_id
     paciente_id = None
@@ -17,13 +19,18 @@ def create_consulta(db: Session, payload: ConsultaCreate):
         cita = db.query(Cita).filter(Cita.id == payload.cita_id).first()
         if cita:
             paciente_id = cita.paciente_id
-            # Buscar o crear historia clínica
-            historia = db.query(Historia).filter(Historia.paciente_id == paciente_id).first()
-            if not historia:
-                historia = Historia(paciente_id=paciente_id)
-                db.add(historia)
-                db.flush()
-            historia_id = historia.id
+            # Buscar paciente y su historia clínica
+            paciente = db.query(Paciente).filter(Paciente.id == paciente_id).first()
+            if paciente:
+                # Buscar o crear historia clínica
+                if not paciente.historia_id:
+                    # Crear nueva historia clínica
+                    historia = Historia(identificador=f"H-{paciente.cedula}")
+                    db.add(historia)
+                    db.flush()
+                    paciente.historia_id = historia.id
+                    db.flush()
+                historia_id = paciente.historia_id
     
     # Convertir signos_vitales dict a JSON
     signos_vitales_json = None
@@ -48,6 +55,31 @@ def create_consulta(db: Session, payload: ConsultaCreate):
         signos_vitales=signos_vitales_json
     )
     db.add(consulta)
+    
+    # Asignar sala a la cita cuando se registran signos vitales
+    if payload.cita_id and signos_vitales_json:
+        cita = db.query(Cita).filter(Cita.id == payload.cita_id).first()
+        if cita and not cita.sala_asignada:
+            # Asignar sala basado en el médico (puedes personalizar la lógica)
+            from app.models.medico import Medico
+            sala = "Consultorio General"
+            if cita.medico_id:
+                medico = db.query(Medico).filter(Medico.id == cita.medico_id).first()
+                if medico:
+                    # Asignar sala según especialidad
+                    especialidad_salas = {
+                        "Cardiología": "Consultorio 1 - Cardiología",
+                        "Pediatría": "Consultorio 2 - Pediatría",
+                        "Medicina General": "Consultorio 3 - Medicina General",
+                        "Ginecología": "Consultorio 4 - Ginecología",
+                        "Traumatología": "Consultorio 5 - Traumatología"
+                    }
+                    sala = especialidad_salas.get(medico.especialidad, f"Consultorio {cita.medico_id}")
+            
+            cita.sala_asignada = sala
+            cita.estado = "en_consulta"  # Cambiar estado a en consulta
+            print(f"✅ Sala asignada a cita #{cita.id}: {sala}")
+    
     db.commit()
     db.refresh(consulta)
     return consulta

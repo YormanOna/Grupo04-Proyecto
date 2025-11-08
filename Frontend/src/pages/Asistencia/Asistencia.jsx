@@ -10,9 +10,17 @@ const Asistencia = () => {
   const [loading, setLoading] = useState(false)
   const [ultimaAsistencia, setUltimaAsistencia] = useState(null)
   const [observaciones, setObservaciones] = useState('')
+  const [horaActual, setHoraActual] = useState(new Date())
 
   useEffect(() => {
     loadAsistencias()
+    
+    // Actualizar el reloj cada segundo
+    const interval = setInterval(() => {
+      setHoraActual(new Date())
+    }, 1000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   const loadAsistencias = async () => {
@@ -59,12 +67,13 @@ const Asistencia = () => {
   }
 
   const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleString('es-ES', {
+    return new Date(fecha).toLocaleString('es-EC', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'America/Guayaquil'
     })
   }
 
@@ -87,9 +96,14 @@ const Asistencia = () => {
         <div className="flex items-center space-x-3 bg-white px-5 py-3 rounded-xl shadow-md border border-gray-200">
           <Clock className="w-6 h-6 text-blue-600" />
           <div>
-            <p className="text-xs text-gray-500">Hora actual</p>
+            <p className="text-xs text-gray-500">Hora actual (Ecuador)</p>
             <p className="text-sm font-semibold text-gray-700">
-              {new Date().toLocaleTimeString('es-ES')}
+              {horaActual.toLocaleTimeString('es-EC', {
+                timeZone: 'America/Guayaquil',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              })}
             </p>
           </div>
         </div>

@@ -59,7 +59,7 @@ class AuditoriaService:
         filtros: Optional[AuditoriaFilter] = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Auditoria]:
+    ) -> List[Dict[str, Any]]:
         """Lista registros de auditoría con filtros opcionales"""
         query = db.query(Auditoria)
         
@@ -84,30 +84,118 @@ class AuditoriaService:
             if filtros.estado:
                 query = query.filter(Auditoria.estado == filtros.estado)
         
-        return query.order_by(desc(Auditoria.fecha_hora)).offset(skip).limit(limit).all()
+        registros = query.order_by(desc(Auditoria.fecha_hora)).offset(skip).limit(limit).all()
+        
+        # Convertir a diccionarios manualmente
+        return [
+            {
+                "id": r.id,
+                "usuario_id": r.usuario_id,
+                "usuario_nombre": r.usuario_nombre,
+                "usuario_cargo": r.usuario_cargo,
+                "accion": r.accion,
+                "modulo": r.modulo,
+                "descripcion": r.descripcion,
+                "tabla_afectada": r.tabla_afectada,
+                "registro_id": r.registro_id,
+                "datos_anteriores": r.datos_anteriores,
+                "datos_nuevos": r.datos_nuevos,
+                "ip_address": r.ip_address,
+                "user_agent": r.user_agent,
+                "estado": r.estado,
+                "fecha_hora": r.fecha_hora,
+                "detalles_adicionales": r.detalles_adicionales
+            }
+            for r in registros
+        ]
     
     @staticmethod
-    def obtener_por_id(db: Session, auditoria_id: int) -> Optional[Auditoria]:
+    def obtener_por_id(db: Session, auditoria_id: int) -> Optional[Dict[str, Any]]:
         """Obtiene un registro de auditoría por ID"""
-        return db.query(Auditoria).filter(Auditoria.id == auditoria_id).first()
+        r = db.query(Auditoria).filter(Auditoria.id == auditoria_id).first()
+        if not r:
+            return None
+        
+        return {
+            "id": r.id,
+            "usuario_id": r.usuario_id,
+            "usuario_nombre": r.usuario_nombre,
+            "usuario_cargo": r.usuario_cargo,
+            "accion": r.accion,
+            "modulo": r.modulo,
+            "descripcion": r.descripcion,
+            "tabla_afectada": r.tabla_afectada,
+            "registro_id": r.registro_id,
+            "datos_anteriores": r.datos_anteriores,
+            "datos_nuevos": r.datos_nuevos,
+            "ip_address": r.ip_address,
+            "user_agent": r.user_agent,
+            "estado": r.estado,
+            "fecha_hora": r.fecha_hora,
+            "detalles_adicionales": r.detalles_adicionales
+        }
     
     @staticmethod
-    def obtener_por_usuario(db: Session, usuario_id: int, limit: int = 50) -> List[Auditoria]:
+    def obtener_por_usuario(db: Session, usuario_id: int, limit: int = 50) -> List[Dict[str, Any]]:
         """Obtiene el historial de acciones de un usuario específico"""
-        return db.query(Auditoria)\
+        registros = db.query(Auditoria)\
             .filter(Auditoria.usuario_id == usuario_id)\
             .order_by(desc(Auditoria.fecha_hora))\
             .limit(limit)\
             .all()
+        
+        return [
+            {
+                "id": r.id,
+                "usuario_id": r.usuario_id,
+                "usuario_nombre": r.usuario_nombre,
+                "usuario_cargo": r.usuario_cargo,
+                "accion": r.accion,
+                "modulo": r.modulo,
+                "descripcion": r.descripcion,
+                "tabla_afectada": r.tabla_afectada,
+                "registro_id": r.registro_id,
+                "datos_anteriores": r.datos_anteriores,
+                "datos_nuevos": r.datos_nuevos,
+                "ip_address": r.ip_address,
+                "user_agent": r.user_agent,
+                "estado": r.estado,
+                "fecha_hora": r.fecha_hora,
+                "detalles_adicionales": r.detalles_adicionales
+            }
+            for r in registros
+        ]
     
     @staticmethod
-    def obtener_por_modulo(db: Session, modulo: str, limit: int = 50) -> List[Auditoria]:
+    def obtener_por_modulo(db: Session, modulo: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Obtiene el historial de acciones de un módulo específico"""
-        return db.query(Auditoria)\
+        registros = db.query(Auditoria)\
             .filter(Auditoria.modulo == modulo)\
             .order_by(desc(Auditoria.fecha_hora))\
             .limit(limit)\
             .all()
+        
+        return [
+            {
+                "id": r.id,
+                "usuario_id": r.usuario_id,
+                "usuario_nombre": r.usuario_nombre,
+                "usuario_cargo": r.usuario_cargo,
+                "accion": r.accion,
+                "modulo": r.modulo,
+                "descripcion": r.descripcion,
+                "tabla_afectada": r.tabla_afectada,
+                "registro_id": r.registro_id,
+                "datos_anteriores": r.datos_anteriores,
+                "datos_nuevos": r.datos_nuevos,
+                "ip_address": r.ip_address,
+                "user_agent": r.user_agent,
+                "estado": r.estado,
+                "fecha_hora": r.fecha_hora,
+                "detalles_adicionales": r.detalles_adicionales
+            }
+            for r in registros
+        ]
     
     @staticmethod
     def contar_registros(db: Session, filtros: Optional[AuditoriaFilter] = None) -> int:

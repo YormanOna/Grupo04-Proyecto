@@ -4,6 +4,7 @@ import { loteService } from '../../services/loteService';
 import { medicamentoService } from '../../services/medicamentoService';
 import Modal from '../../components/Modal';
 import { toast } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 export default function LoteList() {
   const [lotes, setLotes] = useState([]);
@@ -107,15 +108,38 @@ export default function LoteList() {
   };
 
   const handleDelete = async (loteId) => {
-    if (!confirm('¿Está seguro de eliminar este lote?')) return;
+    const result = await Swal.fire({
+      title: '¿Eliminar lote?',
+      text: 'Esta acción eliminará permanentemente este lote del inventario',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '🗑️ Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    })
+
+    if (!result.isConfirmed) return
 
     try {
       await loteService.eliminarLote(loteId);
-      toast.success('Lote eliminado');
+      Swal.fire({
+        icon: 'success',
+        title: '¡Eliminado!',
+        text: 'Lote eliminado exitosamente',
+        timer: 2000,
+        showConfirmButton: false
+      })
       loadLotes();
     } catch (error) {
       console.error('Error al eliminar lote:', error);
-      toast.error('Error al eliminar lote');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo eliminar el lote',
+        confirmButtonColor: '#ef4444'
+      })
     }
   };
 

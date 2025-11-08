@@ -6,6 +6,7 @@ import { getCitas, deleteCita, updateCita } from '../../services/citaService'
 import { getMedicos } from '../../services/medicoService'
 import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import useWebSocket from '../../hooks/useWebSocket'
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -22,6 +23,7 @@ import {
   Eye
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Swal from 'sweetalert2'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import './CitaCalendar.css'
 
@@ -68,12 +70,21 @@ const CitaCalendar = () => {
   const [citasDelDia, setCitasDelDia] = useState([])
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { lastUpdate } = useWebSocket()
 
   const isMedico = user?.cargo === 'Medico' || user?.cargo === 'Médico'
 
   useEffect(() => {
     cargarDatos()
   }, [])
+
+  // Recargar automáticamente cuando hay cambios en citas vía WebSocket
+  useEffect(() => {
+    if (lastUpdate && (lastUpdate.type === 'cita_creada' || lastUpdate.type === 'cita_actualizada')) {
+      console.log('🔄 Recargando citas por WebSocket:', lastUpdate.type)
+      cargarDatos()
+    }
+  }, [lastUpdate])
 
   const cargarDatos = async () => {
     try {
@@ -82,6 +93,11 @@ const CitaCalendar = () => {
         getCitas(),
         isMedico ? [] : getMedicos()
       ])
+      
+      console.log('📅 Citas cargadas desde API:', citasData)
+      console.log('📅 Total de citas:', citasData.length)
+      console.log('📅 Primera cita (ejemplo):', citasData[0])
+      
       setCitas(citasData)
       if (!isMedico) {
         setMedicos(medicosData)
@@ -98,18 +114,33 @@ const CitaCalendar = () => {
   const events = useMemo(() => {
     let citasFiltradas = citas
 
-    // Filtrar por médico si es necesario
+    console.log('📅 Total de citas cargadas desde API:', citas.length)
+    if (citas.length > 0) {
+      console.log('📅 Primera cita (ejemplo):', citas[0])
+      console.log('📅 Detalles: medico_id:', citas[0].medico_id, 'estado:', citas[0].estado, 'fecha:', citas[0].fecha)
+    }
+
+    // IMPORTANTE: Si es médico, el backend YA filtró las citas en la API
+    // No necesitamos filtrar nuevamente aquí
     if (isMedico) {
-      // CORREGIDO: usar user.id (ID de médico) en lugar de user.empleado_id
-      citasFiltradas = citasFiltradas.filter(cita => cita.medico_id === user.id)
+      console.log('�‍⚕️ Usuario médico - El backend ya filtró las citas')
+      console.log('📅 Citas del médico:', citasFiltradas.length)
     } else if (filtroMedico !== 'todos') {
+      // Solo aplicar filtro de médico si NO es médico (admin/enfermera viendo citas)
       citasFiltradas = citasFiltradas.filter(cita => cita.medico_id === parseInt(filtroMedico))
+      console.log('📅 Filtrado por médico ID:', filtroMedico, '- Citas encontradas:', citasFiltradas.length)
     }
 
     // Filtrar por estado
     if (filtroEstado !== 'todas') {
-      citasFiltradas = citasFiltradas.filter(cita => cita.estado === filtroEstado)
+      citasFiltradas = citasFiltradas.filter(cita => {
+        const citaEstado = (cita.estado || '').toLowerCase()
+        return citaEstado === filtroEstado
+      })
+      console.log('📅 Filtrado por estado:', filtroEstado, '- Citas encontradas:', citasFiltradas.length)
     }
+
+    console.log('📅 Citas después de todos los filtros:', citasFiltradas.length)
 
     return citasFiltradas.map(cita => {
       try {
@@ -117,10 +148,17 @@ const CitaCalendar = () => {
         let fechaInicio
         
         if (cita.fecha) {
-          // Convertir la fecha ISO a Date
-          fechaInicio = new Date(cita.fecha)
+          // Convertir la fecha ISO a Date - IMPORTANTE: manejar zona horaria local
+          const fechaStr = cita.fecha.replace('Z', '') // Eliminar Z si existe para usar hora local
+          fechaInicio = new Date(fechaStr)
+          
+          // Validar que la fecha sea válida
+          if (isNaN(fechaInicio.getTime())) {
+            console.warn('Fecha inválida para cita:', cita.id, cita.fecha)
+            fechaInicio = new Date()
+          }
         } else {
-          // Fecha inválida, usar fecha actual
+          console.warn('Cita sin fecha:', cita.id)
           fechaInicio = new Date()
         }
 
@@ -146,7 +184,7 @@ const CitaCalendar = () => {
           resource: cita,
         }
       } catch (error) {
-        console.error('Error procesando cita:', cita, error)
+        console.error('❌ Error procesando cita:', cita, error)
         return null
       }
     }).filter(Boolean) // Eliminar eventos nulos
@@ -157,17 +195,20 @@ const CitaCalendar = () => {
     const cita = event.resource
     let backgroundColor = '#3b82f6' // azul por defecto
     
-    switch(cita.estado) {
-      case 'Pendiente':
+    const estadoLower = (cita.estado || '').toLowerCase()
+    
+    switch(estadoLower) {
+      case 'pendiente':
+      case 'programada':
         backgroundColor = '#f59e0b' // amarillo
         break
-      case 'Confirmada':
+      case 'confirmada':
         backgroundColor = '#10b981' // verde
         break
-      case 'Cancelada':
+      case 'cancelada':
         backgroundColor = '#ef4444' // rojo
         break
-      case 'Completada':
+      case 'completada':
         backgroundColor = '#6366f1' // índigo
         break
       default:
@@ -197,10 +238,13 @@ const CitaCalendar = () => {
     const fecha = slotInfo.start
     setSelectedDate(fecha)
     
-    // Filtrar citas del día seleccionado
+    // Filtrar citas del día seleccionado - Comparar solo la parte de la fecha
     const citasDelDiaSeleccionado = events.filter(event => {
       const eventDate = new Date(event.start)
-      return eventDate.toDateString() === fecha.toDateString()
+      // Normalizar ambas fechas a medianoche en hora local para comparar solo el día
+      const eventDateNormalized = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
+      const fechaNormalized = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate())
+      return eventDateNormalized.getTime() === fechaNormalized.getTime()
     }).map(event => event.resource)
     
     setCitasDelDia(citasDelDiaSeleccionado)
@@ -224,16 +268,39 @@ const CitaCalendar = () => {
   }
 
   const handleEliminar = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar esta cita? Esta acción no se puede deshacer.')) {
-      try {
-        await deleteCita(id)
-        toast.success('Cita eliminada exitosamente')
-        setSelectedEvent(null)
-        cargarDatos() // Recargar citas
-      } catch (error) {
-        console.error('Error al eliminar cita:', error)
-        toast.error('Error al eliminar la cita')
-      }
+    const result = await Swal.fire({
+      title: '¿Eliminar cita?',
+      text: 'Esta acción no se puede deshacer',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '🗑️ Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    })
+
+    if (!result.isConfirmed) return
+
+    try {
+      await deleteCita(id)
+      Swal.fire({
+        icon: 'success',
+        title: '¡Eliminada!',
+        text: 'Cita eliminada exitosamente',
+        timer: 2000,
+        showConfirmButton: false
+      })
+      setSelectedEvent(null)
+      cargarDatos() // Recargar citas
+    } catch (error) {
+      console.error('Error al eliminar cita:', error)
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo eliminar la cita',
+        confirmButtonColor: '#ef4444'
+      })
     }
   }
 
@@ -250,21 +317,25 @@ const CitaCalendar = () => {
   }
 
   const getEstadoBadgeColor = (estado) => {
-    switch(estado) {
-      case 'Pendiente': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
-      case 'Confirmada': return 'bg-green-100 text-green-800 border-green-300'
-      case 'Cancelada': return 'bg-red-100 text-red-800 border-red-300'
-      case 'Completada': return 'bg-indigo-100 text-indigo-800 border-indigo-300'
+    const estadoLower = (estado || '').toLowerCase()
+    switch(estadoLower) {
+      case 'pendiente':
+      case 'programada': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      case 'confirmada': return 'bg-green-100 text-green-800 border-green-300'
+      case 'cancelada': return 'bg-red-100 text-red-800 border-red-300'
+      case 'completada': return 'bg-indigo-100 text-indigo-800 border-indigo-300'
       default: return 'bg-gray-100 text-gray-800 border-gray-300'
     }
   }
 
   const getEstadoIcon = (estado) => {
-    switch(estado) {
-      case 'Pendiente': return <Clock className="w-4 h-4" />
-      case 'Confirmada': return <CheckCircle className="w-4 h-4" />
-      case 'Cancelada': return <XCircle className="w-4 h-4" />
-      case 'Completada': return <CheckCircle className="w-4 h-4" />
+    const estadoLower = (estado || '').toLowerCase()
+    switch(estadoLower) {
+      case 'pendiente':
+      case 'programada': return <Clock className="w-4 h-4" />
+      case 'confirmada': return <CheckCircle className="w-4 h-4" />
+      case 'cancelada': return <XCircle className="w-4 h-4" />
+      case 'completada': return <CheckCircle className="w-4 h-4" />
       default: return <AlertCircle className="w-4 h-4" />
     }
   }
@@ -304,9 +375,9 @@ const CitaCalendar = () => {
           <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-5 shadow-lg border border-yellow-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Pendientes</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Programadas</p>
                 <p className="text-2xl font-bold text-yellow-700">
-                  {citas.filter(c => c.estado === 'Pendiente').length}
+                  {citas.filter(c => (c.estado || '').toLowerCase() === 'programada').length}
                 </p>
               </div>
               <Clock className="w-8 h-8 text-yellow-600" />
@@ -318,7 +389,7 @@ const CitaCalendar = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Confirmadas</p>
                 <p className="text-2xl font-bold text-green-700">
-                  {citas.filter(c => c.estado === 'Confirmada').length}
+                  {citas.filter(c => (c.estado || '').toLowerCase() === 'confirmada').length}
                 </p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-600" />
@@ -330,7 +401,7 @@ const CitaCalendar = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Completadas</p>
                 <p className="text-2xl font-bold text-indigo-700">
-                  {citas.filter(c => c.estado === 'Completada').length}
+                  {citas.filter(c => (c.estado || '').toLowerCase() === 'completada').length}
                 </p>
               </div>
               <CheckCircle className="w-8 h-8 text-indigo-600" />
@@ -342,7 +413,7 @@ const CitaCalendar = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Canceladas</p>
                 <p className="text-2xl font-bold text-red-700">
-                  {citas.filter(c => c.estado === 'Cancelada').length}
+                  {citas.filter(c => (c.estado || '').toLowerCase() === 'cancelada').length}
                 </p>
               </div>
               <XCircle className="w-8 h-8 text-red-600" />
@@ -369,10 +440,10 @@ const CitaCalendar = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               >
                 <option value="todas">Todas las citas</option>
-                <option value="Pendiente">Pendientes</option>
-                <option value="Confirmada">Confirmadas</option>
-                <option value="Completada">Completadas</option>
-                <option value="Cancelada">Canceladas</option>
+                <option value="programada">Programadas</option>
+                <option value="confirmada">Confirmadas</option>
+                <option value="completada">Completadas</option>
+                <option value="cancelada">Canceladas</option>
               </select>
             </div>
 
@@ -756,22 +827,22 @@ const CitaCalendar = () => {
               )}
 
               {/* Acciones rápidas - Cambiar estado */}
-              {selectedEvent.estado !== 'Cancelada' && selectedEvent.estado !== 'Completada' && (
+              {((selectedEvent.estado || '').toLowerCase() !== 'cancelada') && ((selectedEvent.estado || '').toLowerCase() !== 'completada') && (
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
                   <h4 className="font-semibold text-gray-800 mb-3">Acciones Rápidas</h4>
                   <div className="flex flex-wrap gap-2">
-                    {selectedEvent.estado === 'Pendiente' && (
+                    {((selectedEvent.estado || '').toLowerCase() === 'pendiente' || (selectedEvent.estado || '').toLowerCase() === 'programada') && (
                       <button
-                        onClick={() => handleCambiarEstado(selectedEvent.id, 'Confirmada')}
+                        onClick={() => handleCambiarEstado(selectedEvent.id, 'confirmada')}
                         className="flex items-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-all"
                       >
                         <CheckCircle className="w-4 h-4" />
                         <span>Confirmar Cita</span>
                       </button>
                     )}
-                    {selectedEvent.estado === 'Confirmada' && (
+                    {(selectedEvent.estado || '').toLowerCase() === 'confirmada' && (
                       <button
-                        onClick={() => handleCambiarEstado(selectedEvent.id, 'Completada')}
+                        onClick={() => handleCambiarEstado(selectedEvent.id, 'completada')}
                         className="flex items-center space-x-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-medium transition-all"
                       >
                         <CheckCircle className="w-4 h-4" />
@@ -779,7 +850,7 @@ const CitaCalendar = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => handleCambiarEstado(selectedEvent.id, 'Cancelada')}
+                      onClick={() => handleCambiarEstado(selectedEvent.id, 'cancelada')}
                       className="flex items-center space-x-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-all"
                     >
                       <XCircle className="w-4 h-4" />

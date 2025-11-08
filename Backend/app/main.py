@@ -7,7 +7,7 @@ from app.core.init_data import initialize_default_data
 from app.routes import (
     auth_routes, empleado_routes, paciente_routes, medico_routes,
     cita_routes, historia_routes, consulta_routes, farmacia_routes, medicamento_routes,
-    asistencia_routes, receta_routes, websocket_routes, encuesta_routes, email_preview_routes,
+    asistencia_routes, receta_routes, websocket_routes, email_preview_routes,
     auditoria_routes, diagnostico_routes, lote_routes, notificacion_routes
 )
 
@@ -104,7 +104,6 @@ def create_app() -> FastAPI:
     app.include_router(medicamento_routes.router, prefix="/medicamentos", tags=["medicamentos"])
     app.include_router(asistencia_routes.router, prefix="/asistencias", tags=["asistencias"])
     app.include_router(receta_routes.router, prefix="/recetas", tags=["recetas"])
-    app.include_router(encuesta_routes.router, prefix="/encuestas", tags=["encuestas"])
     app.include_router(auditoria_routes.router, prefix="/auditoria", tags=["auditoria"])
     app.include_router(diagnostico_routes.router, tags=["diagnosticos"])
     app.include_router(lote_routes.router, tags=["lotes"])

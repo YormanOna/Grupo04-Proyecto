@@ -11,37 +11,41 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- ============================================================
 -- 1. EMPLEADOS (Base para todo el sistema)
+-- NOTA: Los IDs 1-5 están reservados para usuarios por defecto de init_data.py
+-- Estos empleados empiezan desde ID 6
+-- Contraseñas por rol: medico123, farma123, enfer123, admin123, superadmin123
 -- ============================================================
-INSERT INTO empleados (nombre, apellido, cedula, cargo, email, telefono, hashed_password) VALUES
-('Carlos', 'Méndez', 1104567890, 'Medico', 'carlos.mendez@hospital.com', '0987654321', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('María', 'González', 1104567891, 'Medico', 'maria.gonzalez@hospital.com', '0987654322', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Juan', 'Rodríguez', 1104567892, 'Medico', 'juan.rodriguez@hospital.com', '0987654323', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Ana', 'Pérez', 1104567893, 'Medico', 'ana.perez@hospital.com', '0987654324', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Luis', 'Torres', 1104567894, 'Medico', 'luis.torres@hospital.com', '0987654325', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Carmen', 'Sánchez', 1104567895, 'Farmaceutico', 'carmen.sanchez@hospital.com', '0987654326', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Pedro', 'Ramírez', 1104567896, 'Farmaceutico', 'pedro.ramirez@hospital.com', '0987654327', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Sofia', 'Jiménez', 1104567897, 'Enfermera', 'sofia.jimenez@hospital.com', '0987654328', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Miguel', 'Castro', 1104567898, 'Enfermera', 'miguel.castro@hospital.com', '0987654329', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Laura', 'Morales', 1104567899, 'Administrador', 'laura.morales@hospital.com', '0987654330', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Diego', 'Vargas', 1104567900, 'Administrador', 'diego.vargas@hospital.com', '0987654331', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Patricia', 'Herrera', 1104567901, 'Admin General', 'patricia.herrera@hospital.com', '0987654332', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Roberto', 'Díaz', 1104567902, 'Medico', 'roberto.diaz@hospital.com', '0987654333', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Valeria', 'Ruiz', 1104567903, 'Medico', 'valeria.ruiz@hospital.com', '0987654334', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi'),
-('Fernando', 'Ortiz', 1104567904, 'Medico', 'fernando.ortiz@hospital.com', '0987654335', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT6WAwM8hG0BfW5BjkEUyBvRCjfi');
+INSERT INTO empleados (id, nombre, apellido, cedula, cargo, email, telefono, hashed_password) VALUES
+(6, 'Carlos', 'Méndez', 1104567890, 'Medico', 'carlos.mendez@hospital.com', '0987654321', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
+(7, 'María', 'González', 1104567891, 'Medico', 'maria.gonzalez@hospital.com', '0987654322', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
+(8, 'Juan', 'Rodríguez', 1104567892, 'Medico', 'juan.rodriguez@hospital.com', '0987654323', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
+(9, 'Ana', 'Pérez', 1104567893, 'Medico', 'ana.perez@hospital.com', '0987654324', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
+(10, 'Luis', 'Torres', 1104567894, 'Medico', 'luis.torres@hospital.com', '0987654325', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
+(11, 'Carmen', 'Sánchez', 1104567895, 'Farmaceutico', 'carmen.sanchez@hospital.com', '0987654326', '$2b$12$l0Tghebvd/2ZKvCsZsdCtOw4.NtInm9t9Njnu90oLP.xlxPViOcCG'),
+(12, 'Pedro', 'Ramírez', 1104567896, 'Farmaceutico', 'pedro.ramirez@hospital.com', '0987654327', '$2b$12$l0Tghebvd/2ZKvCsZsdCtOw4.NtInm9t9Njnu90oLP.xlxPViOcCG'),
+(13, 'Sofia', 'Jiménez', 1104567897, 'Enfermera', 'sofia.jimenez@hospital.com', '0987654328', '$2b$12$G3zveM.9aCCPFFpgemNpC.3PxN7p5mhFfpnydsZFuYyNRjL4Ygi6W'),
+(14, 'Miguel', 'Castro', 1104567898, 'Enfermera', 'miguel.castro@hospital.com', '0987654329', '$2b$12$G3zveM.9aCCPFFpgemNpC.3PxN7p5mhFfpnydsZFuYyNRjL4Ygi6W'),
+(15, 'Laura', 'Morales', 1104567899, 'Administrador', 'laura.morales@hospital.com', '0987654330', '$2b$12$mEykh6delmWCmseup4JQWe7RP95Tr3Vjiq7tt9ufOY977mrwUASkG'),
+(16, 'Diego', 'Vargas', 1104567900, 'Administrador', 'diego.vargas@hospital.com', '0987654331', '$2b$12$mEykh6delmWCmseup4JQWe7RP95Tr3Vjiq7tt9ufOY977mrwUASkG'),
+(17, 'Patricia', 'Herrera', 1104567901, 'Admin General', 'patricia.herrera@hospital.com', '0987654332', '$2b$12$w0Rhwcw7Nmd90ru9Ur4UO.CQp1TtdGDs5oYa9SMdnCJzT65LlSCfm'),
+(18, 'Roberto', 'Díaz', 1104567902, 'Medico', 'roberto.diaz@hospital.com', '0987654333', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
+(19, 'Valeria', 'Ruiz', 1104567903, 'Medico', 'valeria.ruiz@hospital.com', '0987654334', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
+(20, 'Fernando', 'Ortiz', 1104567904, 'Medico', 'fernando.ortiz@hospital.com', '0987654335', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK');
 
 -- ============================================================
 -- 2. MÉDICOS (Extensión de empleados)
--- Nota: empleado_id referencia a la tabla empleados
+-- NOTA: empleado_id 3 es el médico por defecto (medico@hospital.com)
+-- Los médicos de ejemplo referencian empleados ID 6-10 y 18-20
 -- ============================================================
 INSERT INTO medicos (nombre, apellido, cedula, especialidad, email, empleado_id) VALUES
-('Carlos', 'Méndez', 1104567890, 'Cardiología', 'carlos.mendez@hospital.com', 1),
-('María', 'González', 1104567891, 'Pediatría', 'maria.gonzalez@hospital.com', 2),
-('Juan', 'Rodríguez', 1104567892, 'Medicina General', 'juan.rodriguez@hospital.com', 3),
-('Ana', 'Pérez', 1104567893, 'Ginecología', 'ana.perez@hospital.com', 4),
-('Luis', 'Torres', 1104567894, 'Traumatología', 'luis.torres@hospital.com', 5),
-('Roberto', 'Díaz', 1104567902, 'Dermatología', 'roberto.diaz@hospital.com', 13),
-('Valeria', 'Ruiz', 1104567903, 'Oftalmología', 'valeria.ruiz@hospital.com', 14),
-('Fernando', 'Ortiz', 1104567904, 'Neurología', 'fernando.ortiz@hospital.com', 15);
+('Carlos', 'Méndez', 1104567890, 'Cardiología', 'carlos.mendez@hospital.com', 6),
+('María', 'González', 1104567891, 'Pediatría', 'maria.gonzalez@hospital.com', 7),
+('Juan', 'Rodríguez', 1104567892, 'Medicina General', 'juan.rodriguez@hospital.com', 8),
+('Ana', 'Pérez', 1104567893, 'Ginecología', 'ana.perez@hospital.com', 9),
+('Luis', 'Torres', 1104567894, 'Traumatología', 'luis.torres@hospital.com', 10),
+('Roberto', 'Díaz', 1104567902, 'Dermatología', 'roberto.diaz@hospital.com', 18),
+('Valeria', 'Ruiz', 1104567903, 'Oftalmología', 'valeria.ruiz@hospital.com', 19),
+('Fernando', 'Ortiz', 1104567904, 'Neurología', 'fernando.ortiz@hospital.com', 20);
 
 -- ============================================================
 -- 3. PACIENTES
@@ -90,42 +94,46 @@ UPDATE pacientes SET historia_id = 15 WHERE id = 15;
 
 -- ============================================================
 -- 5. CITAS (Columnas: fecha, hora_inicio, hora_fin, motivo, estado, tipo_cita, paciente_id, medico_id, encargado_id)
+-- NOTA: medico_id 1 es el médico por defecto, medico_id 2-9 son los de ejemplo
+-- encargado_id 15,16 son los administradores (Laura y Diego)
 -- ============================================================
 INSERT INTO citas (paciente_id, medico_id, encargado_id, fecha, hora_inicio, hora_fin, motivo, estado, tipo_cita) VALUES
-(1, 1, 10, '2025-11-10 09:00:00', '09:00', '09:30', 'Control cardiológico', 'programada', 'consulta'),
-(2, 2, 10, '2025-11-10 10:00:00', '10:00', '10:30', 'Control pediátrico', 'programada', 'seguimiento'),
-(3, 3, 11, '2025-11-08 08:00:00', '08:00', '08:30', 'Malestar general', 'completada', 'consulta'),
-(4, 4, 10, '2025-11-09 14:00:00', '14:00', '14:30', 'Control ginecológico', 'completada', 'seguimiento'),
-(5, 5, 11, '2025-11-08 11:00:00', '11:00', '11:30', 'Dolor en rodilla', 'completada', 'consulta'),
-(6, 1, 10, '2025-11-07 15:00:00', '15:00', '15:30', 'Dolor precordial', 'completada', 'emergencia'),
-(7, 2, 11, '2025-11-11 09:00:00', '09:00', '09:30', 'Vacunación', 'programada', 'seguimiento'),
-(8, 3, 10, '2025-11-06 10:00:00', '10:00', '10:30', 'Dolor abdominal', 'completada', 'consulta'),
-(9, 6, 10, '2025-11-12 11:00:00', '11:00', '11:30', 'Consulta dermatológica', 'programada', 'consulta'),
-(10, 2, 11, '2025-11-13 08:30:00', '08:30', '09:00', 'Control crecimiento', 'programada', 'seguimiento'),
-(11, 4, 10, '2025-11-05 13:00:00', '13:00', '13:30', 'Control prenatal', 'completada', 'seguimiento'),
-(12, 8, 11, '2025-11-14 10:00:00', '10:00', '10:30', 'Cefalea intensa', 'programada', 'consulta'),
-(13, 7, 10, '2025-11-15 09:00:00', '09:00', '09:30', 'Revisión de vista', 'programada', 'consulta'),
-(14, 3, 11, '2025-11-04 16:00:00', '16:00', '16:30', 'Malestar y fiebre', 'completada', 'consulta'),
-(15, 1, 10, '2025-11-16 14:00:00', '14:00', '14:30', 'Palpitaciones', 'programada', 'consulta');
+(1, 2, 15, '2025-11-10 09:00:00', '09:00', '09:30', 'Control cardiológico', 'programada', 'consulta'),
+(2, 3, 15, '2025-11-10 10:00:00', '10:00', '10:30', 'Control pediátrico', 'programada', 'seguimiento'),
+(3, 4, 16, '2025-11-08 08:00:00', '08:00', '08:30', 'Malestar general', 'completada', 'consulta'),
+(4, 5, 15, '2025-11-09 14:00:00', '14:00', '14:30', 'Control ginecológico', 'completada', 'seguimiento'),
+(5, 6, 16, '2025-11-08 11:00:00', '11:00', '11:30', 'Dolor en rodilla', 'completada', 'consulta'),
+(6, 2, 15, '2025-11-07 15:00:00', '15:00', '15:30', 'Dolor precordial', 'completada', 'emergencia'),
+(7, 3, 16, '2025-11-11 09:00:00', '09:00', '09:30', 'Vacunación', 'programada', 'seguimiento'),
+(8, 4, 15, '2025-11-06 10:00:00', '10:00', '10:30', 'Dolor abdominal', 'completada', 'consulta'),
+(9, 7, 15, '2025-11-12 11:00:00', '11:00', '11:30', 'Consulta dermatológica', 'programada', 'consulta'),
+(10, 3, 16, '2025-11-13 08:30:00', '08:30', '09:00', 'Control crecimiento', 'programada', 'seguimiento'),
+(11, 5, 15, '2025-11-05 13:00:00', '13:00', '13:30', 'Control prenatal', 'completada', 'seguimiento'),
+(12, 9, 16, '2025-11-14 10:00:00', '10:00', '10:30', 'Cefalea intensa', 'programada', 'consulta'),
+(13, 8, 15, '2025-11-15 09:00:00', '09:00', '09:30', 'Revisión de vista', 'programada', 'consulta'),
+(14, 4, 16, '2025-11-04 16:00:00', '16:00', '16:30', 'Malestar y fiebre', 'completada', 'consulta'),
+(15, 2, 15, '2025-11-16 14:00:00', '14:00', '14:30', 'Palpitaciones', 'programada', 'consulta');
 
 -- ============================================================
 -- 6. CONSULTAS
+-- NOTA: medico_id ahora corresponde a la tabla médicos corregida
 -- ============================================================
 INSERT INTO consultas (cita_id, historia_id, paciente_id, medico_id, motivo_consulta, diagnostico, diagnostico_codigo, tratamiento, observaciones, signos_vitales, fecha_consulta) VALUES
-(3, 3, 3, 3, 'Malestar general, cefalea', 'Resfriado común', 'J00', 'Paracetamol 500mg c/8h, reposo', 'Cuadro viral leve', '{"presion_arterial": "110/70", "temperatura": 37.8}', '2025-11-08 08:30:00'),
-(4, 4, 4, 4, 'Control ginecológico', 'Examen ginecológico normal', 'Z01.4', 'Controles anuales', 'Normal', '{"presion_arterial": "115/75", "temperatura": 36.5}', '2025-11-09 14:30:00'),
-(5, 5, 5, 5, 'Dolor en rodilla', 'Dolor articular', 'M25.5', 'Naproxeno 550mg c/12h', 'Posible tendinitis', '{"presion_arterial": "120/80", "temperatura": 36.6}', '2025-11-08 11:30:00'),
-(6, 6, 6, 1, 'Dolor precordial', 'Dolor precordial inespecífico', 'R07.2', 'Omeprazol 20mg c/12h', 'Descartar cardíaco', '{"presion_arterial": "140/90", "temperatura": 36.7}', '2025-11-07 15:30:00'),
-(8, 8, 8, 3, 'Dolor abdominal', 'Gastritis aguda', 'K29.7', 'Omeprazol 40mg, dieta blanda', 'Gastritis aguda', '{"presion_arterial": "125/82", "temperatura": 36.8}', '2025-11-06 10:30:00'),
-(11, 11, 11, 4, 'Control prenatal', 'Embarazo normal', 'Z34.0', 'Ácido fólico, hierro', '20 semanas', '{"presion_arterial": "110/65"}', '2025-11-05 13:30:00'),
-(14, 14, 14, 3, 'Malestar y fiebre', 'Infección respiratoria aguda', 'J06.9', 'Amoxicilina 500mg c/8h x 7d', 'Faringitis', '{"presion_arterial": "118/76", "temperatura": 38.5}', '2025-11-04 16:30:00');
+(3, 3, 3, 4, 'Malestar general, cefalea', 'Resfriado común', 'J00', 'Paracetamol 500mg c/8h, reposo', 'Cuadro viral leve', '{"presion_arterial": "110/70", "temperatura": 37.8}', '2025-11-08 08:30:00'),
+(4, 4, 4, 5, 'Control ginecológico', 'Examen ginecológico normal', 'Z01.4', 'Controles anuales', 'Normal', '{"presion_arterial": "115/75", "temperatura": 36.5}', '2025-11-09 14:30:00'),
+(5, 5, 5, 6, 'Dolor en rodilla', 'Dolor articular', 'M25.5', 'Naproxeno 550mg c/12h', 'Posible tendinitis', '{"presion_arterial": "120/80", "temperatura": 36.6}', '2025-11-08 11:30:00'),
+(6, 6, 6, 2, 'Dolor precordial', 'Dolor precordial inespecífico', 'R07.2', 'Omeprazol 20mg c/12h', 'Descartar cardíaco', '{"presion_arterial": "140/90", "temperatura": 36.7}', '2025-11-07 15:30:00'),
+(8, 8, 8, 4, 'Dolor abdominal', 'Gastritis aguda', 'K29.7', 'Omeprazol 40mg, dieta blanda', 'Gastritis aguda', '{"presion_arterial": "125/82", "temperatura": 36.8}', '2025-11-06 10:30:00'),
+(11, 11, 11, 5, 'Control prenatal', 'Embarazo normal', 'Z34.0', 'Ácido fólico, hierro', '20 semanas', '{"presion_arterial": "110/65"}', '2025-11-05 13:30:00'),
+(14, 14, 14, 4, 'Malestar y fiebre', 'Infección respiratoria aguda', 'J06.9', 'Amoxicilina 500mg c/8h x 7d', 'Faringitis', '{"presion_arterial": "118/76", "temperatura": 38.5}', '2025-11-04 16:30:00');
 
 -- ============================================================
 -- 7. FARMACIAS
+-- NOTA: farmaceutico_id 11,12 son Carmen Sánchez y Pedro Ramírez
 -- ============================================================
 INSERT INTO farmacias (nombre_farmacia, direccion, telefono, farmaceutico_id) VALUES
-('Farmacia Central Hospital', 'Edificio Principal Planta Baja', '072540100', 6),
-('Farmacia Emergencias', 'Ala de Emergencias', '072540101', 7);
+('Farmacia Central Hospital', 'Edificio Principal Planta Baja', '072540100', 11),
+('Farmacia Emergencias', 'Ala de Emergencias', '072540101', 12);
 
 -- ============================================================
 -- 8. MEDICAMENTOS
@@ -169,67 +177,58 @@ INSERT INTO lotes (medicamento_id, numero_lote, fecha_ingreso, fecha_vencimiento
 
 -- ============================================================
 -- 10. RECETAS (Para consultas que requieren medicación)
+-- NOTA: medico_id corregido, dispensada_por son empleado_id 11,12 (farmacéuticos)
 -- ============================================================
 INSERT INTO recetas (consulta_id, paciente_id, medico_id, fecha_emision, fecha_vencimiento, indicaciones, observaciones, estado, dispensada_por, fecha_dispensacion, lote_id) VALUES
-(1, 3, 3, '2025-11-08 08:30:00', '2025-11-15 23:59:59', 'Paracetamol 500mg cada 8 horas por 5 días', 'Tomar con alimentos', 'dispensada', 6, '2025-11-08 14:00:00', 1),
-(3, 5, 5, '2025-11-08 11:30:00', '2025-11-22 23:59:59', 'Ibuprofeno 400mg cada 8h por 7 días + Omeprazol 20mg cada 12h', 'Protección gástrica', 'dispensada', 6, '2025-11-08 15:30:00', 2),
-(5, 8, 3, '2025-11-06 10:45:00', '2025-11-20 23:59:59', 'Omeprazol 40mg cada 12h por 14 días', 'Tomar antes de comidas', 'dispensada', 7, '2025-11-06 16:00:00', 4),
-(6, 11, 4, '2025-11-05 13:45:00', '2025-12-05 23:59:59', 'Ácido fólico 1mg/día + Sulfato ferroso 300mg/día', 'Durante todo el embarazo', 'dispensada', 6, '2025-11-05 17:00:00', NULL),
-(7, 14, 3, '2025-11-04 16:30:00', '2025-11-18 23:59:59', 'Amoxicilina 500mg cada 8h por 7 días', 'Completar tratamiento', 'dispensada', 6, '2025-11-04 18:00:00', 3),
-(2, 4, 4, '2025-11-09 14:30:00', '2025-11-23 23:59:59', 'Control sin medicación', 'Solo controles periódicos', 'emitida', NULL, NULL, NULL),
-(4, 6, 1, '2025-11-07 15:30:00', '2025-11-21 23:59:59', 'Omeprazol 20mg cada 12h por 10 días', 'Evitar comidas irritantes', 'pendiente', NULL, NULL, NULL);
+(1, 3, 4, '2025-11-08 08:30:00', '2025-11-15 23:59:59', 'Paracetamol 500mg cada 8 horas por 5 días', 'Tomar con alimentos', 'dispensada', 11, '2025-11-08 14:00:00', 1),
+(3, 5, 6, '2025-11-08 11:30:00', '2025-11-22 23:59:59', 'Ibuprofeno 400mg cada 8h por 7 días + Omeprazol 20mg cada 12h', 'Protección gástrica', 'dispensada', 11, '2025-11-08 15:30:00', 2),
+(5, 8, 4, '2025-11-06 10:45:00', '2025-11-20 23:59:59', 'Omeprazol 40mg cada 12h por 14 días', 'Tomar antes de comidas', 'dispensada', 12, '2025-11-06 16:00:00', 4),
+(6, 11, 5, '2025-11-05 13:45:00', '2025-12-05 23:59:59', 'Ácido fólico 1mg/día + Sulfato ferroso 300mg/día', 'Durante todo el embarazo', 'dispensada', 11, '2025-11-05 17:00:00', NULL),
+(7, 14, 4, '2025-11-04 16:30:00', '2025-11-18 23:59:59', 'Amoxicilina 500mg cada 8h por 7 días', 'Completar tratamiento', 'dispensada', 11, '2025-11-04 18:00:00', 3),
+(2, 4, 5, '2025-11-09 14:30:00', '2025-11-23 23:59:59', 'Control sin medicación', 'Solo controles periódicos', 'emitida', NULL, NULL, NULL),
+(4, 6, 2, '2025-11-07 15:30:00', '2025-11-21 23:59:59', 'Omeprazol 20mg cada 12h por 10 días', 'Evitar comidas irritantes', 'pendiente', NULL, NULL, NULL);
 
 -- ============================================================
 -- 11. ASISTENCIAS (Registro de entrada/salida empleados)
+-- NOTA: empleado_id ahora corresponde a los IDs correctos (6-20)
 -- ============================================================
 INSERT INTO asistencias (empleado_id, fecha_entrada, fecha_salida, tipo_registro, observaciones) VALUES
-(1, '2025-11-08 07:30:00', '2025-11-08 16:00:00', 'completo', 'Turno normal'),
-(2, '2025-11-08 07:45:00', '2025-11-08 16:15:00', 'completo', 'Turno normal'),
-(3, '2025-11-08 08:00:00', '2025-11-08 17:00:00', 'completo', 'Turno normal'),
-(4, '2025-11-08 07:30:00', '2025-11-08 16:30:00', 'completo', 'Turno normal'),
-(5, '2025-11-08 08:00:00', '2025-11-08 16:00:00', 'completo', 'Turno normal'),
-(6, '2025-11-08 08:30:00', '2025-11-08 17:00:00', 'completo', 'Turno farmacia'),
-(7, '2025-11-08 14:00:00', '2025-11-08 22:00:00', 'completo', 'Turno tarde'),
-(8, '2025-11-08 07:00:00', '2025-11-08 15:00:00', 'completo', 'Turno mañana'),
-(9, '2025-11-08 15:00:00', '2025-11-08 23:00:00', 'completo', 'Turno tarde'),
-(10, '2025-11-08 08:00:00', '2025-11-08 17:00:00', 'completo', 'Turno administrativo'),
-(11, '2025-11-08 08:00:00', '2025-11-08 17:00:00', 'completo', 'Turno administrativo'),
-(1, '2025-11-07 07:30:00', '2025-11-07 16:00:00', 'completo', 'Turno normal'),
-(2, '2025-11-07 07:45:00', '2025-11-07 16:15:00', 'completo', 'Turno normal'),
-(6, '2025-11-07 08:30:00', '2025-11-07 17:00:00', 'completo', 'Turno farmacia'),
-(8, '2025-11-07 07:00:00', '2025-11-07 15:00:00', 'completo', 'Turno mañana');
+(6, '2025-11-08 07:30:00', '2025-11-08 16:00:00', 'completo', 'Turno normal'),
+(7, '2025-11-08 07:45:00', '2025-11-08 16:15:00', 'completo', 'Turno normal'),
+(8, '2025-11-08 08:00:00', '2025-11-08 17:00:00', 'completo', 'Turno normal'),
+(9, '2025-11-08 07:30:00', '2025-11-08 16:30:00', 'completo', 'Turno normal'),
+(10, '2025-11-08 08:00:00', '2025-11-08 16:00:00', 'completo', 'Turno normal'),
+(11, '2025-11-08 08:30:00', '2025-11-08 17:00:00', 'completo', 'Turno farmacia'),
+(12, '2025-11-08 14:00:00', '2025-11-08 22:00:00', 'completo', 'Turno tarde'),
+(13, '2025-11-08 07:00:00', '2025-11-08 15:00:00', 'completo', 'Turno mañana'),
+(14, '2025-11-08 15:00:00', '2025-11-08 23:00:00', 'completo', 'Turno tarde'),
+(15, '2025-11-08 08:00:00', '2025-11-08 17:00:00', 'completo', 'Turno administrativo'),
+(16, '2025-11-08 08:00:00', '2025-11-08 17:00:00', 'completo', 'Turno administrativo'),
+(6, '2025-11-07 07:30:00', '2025-11-07 16:00:00', 'completo', 'Turno normal'),
+(7, '2025-11-07 07:45:00', '2025-11-07 16:15:00', 'completo', 'Turno normal'),
+(11, '2025-11-07 08:30:00', '2025-11-07 17:00:00', 'completo', 'Turno farmacia'),
+(13, '2025-11-07 07:00:00', '2025-11-07 15:00:00', 'completo', 'Turno mañana');
 
 -- ============================================================
--- 12. ENCUESTAS DE SATISFACCIÓN
--- ============================================================
-INSERT INTO encuestas_satisfaccion (paciente_id, cita_id, calidad_atencion, tiempo_espera, trato_personal, limpieza_instalaciones, satisfaccion_general, comentarios, sugerencias, recomendaria) VALUES
-(3, 3, 5, 4, 5, 5, 5, 'Excelente atención del Dr. Rodríguez', 'Ninguna', 'Si'),
-(4, 4, 5, 5, 5, 4, 5, 'Muy buena atención ginecológica', 'Mejorar señalización', 'Si'),
-(5, 5, 4, 3, 4, 4, 4, 'Buena atención pero tiempo de espera largo', 'Agilizar consultas', 'Si'),
-(6, 6, 5, 5, 5, 5, 5, 'Atención rápida en emergencia', 'Todo perfecto', 'Si'),
-(8, 8, 4, 4, 5, 4, 4, 'Buena atención médica', 'Ninguna', 'Si'),
-(11, 11, 5, 5, 5, 5, 5, 'Excelente seguimiento prenatal', 'Continuar así', 'Si'),
-(14, 14, 5, 4, 5, 5, 5, 'Muy buen diagnóstico y tratamiento', 'Ninguna', 'Si');
-
--- ============================================================
--- 13. AUDITORÍA (Tabla: auditoria - Columnas: usuario_id, accion, modulo, descripcion, tabla_afectada, registro_id, datos_anteriores, datos_nuevos, ip_address, user_agent, estado)
+-- 12. AUDITORÍA (Tabla: auditoria - Columnas: usuario_id, accion, modulo, descripcion, tabla_afectada, registro_id, datos_anteriores, datos_nuevos, ip_address, user_agent, estado)
+-- NOTA: usuario_id ahora usa los IDs correctos de empleados (15-20 para admins, 6-14 para otros)
 -- ============================================================
 INSERT INTO auditoria (usuario_id, accion, modulo, descripcion, tabla_afectada, registro_id, datos_anteriores, datos_nuevos, ip_address, user_agent, estado) VALUES
-(12, 'CREATE', 'Pacientes', 'Creación de paciente Andrea López', 'pacientes', 1, NULL, '{"nombre": "Andrea", "apellido": "López"}', '192.168.1.100', 'Mozilla/5.0', 'exitoso'),
-(12, 'CREATE', 'Pacientes', 'Creación de paciente Ricardo Martínez', 'pacientes', 2, NULL, '{"nombre": "Ricardo", "apellido": "Martínez"}', '192.168.1.100', 'Mozilla/5.0', 'exitoso'),
-(10, 'CREATE', 'Citas', 'Agendamiento de cita cardiológica', 'citas', 1, NULL, '{"paciente_id": 1, "medico_id": 1, "fecha": "2025-11-10"}', '192.168.1.101', 'Mozilla/5.0', 'exitoso'),
-(10, 'CREATE', 'Citas', 'Agendamiento de cita pediátrica', 'citas', 2, NULL, '{"paciente_id": 2, "medico_id": 2, "fecha": "2025-11-10"}', '192.168.1.101', 'Mozilla/5.0', 'exitoso'),
-(1, 'CREATE', 'Consultas', 'Registro de consulta por resfriado común', 'consultas', 1, NULL, '{"paciente_id": 3, "diagnostico": "Resfriado común"}', '192.168.1.102', 'Mozilla/5.0', 'exitoso'),
-(3, 'CREATE', 'Consultas', 'Registro de examen ginecológico', 'consultas', 2, NULL, '{"paciente_id": 4, "diagnostico": "Examen ginecológico"}', '192.168.1.103', 'Mozilla/5.0', 'exitoso'),
-(6, 'CREATE', 'Recetas', 'Emisión de receta médica', 'recetas', 1, NULL, '{"consulta_id": 1, "paciente_id": 3}', '192.168.1.104', 'Mozilla/5.0', 'exitoso'),
-(6, 'UPDATE', 'Recetas', 'Dispensación de receta en farmacia', 'recetas', 1, '{"estado": "emitida"}', '{"estado": "dispensada"}', '192.168.1.104', 'Mozilla/5.0', 'exitoso'),
-(10, 'UPDATE', 'Citas', 'Cambio de estado de cita a completada', 'citas', 3, '{"estado": "programada"}', '{"estado": "completada"}', '192.168.1.101', 'Mozilla/5.0', 'exitoso'),
-(11, 'CREATE', 'Citas', 'Agendamiento de cita para vacunación', 'citas', 7, NULL, '{"paciente_id": 7, "medico_id": 2, "fecha": "2025-11-11"}', '192.168.1.105', 'Mozilla/5.0', 'exitoso'),
-(12, 'CREATE', 'Empleados', 'Registro de nuevo médico Roberto Díaz', 'empleados', 13, NULL, '{"nombre": "Roberto", "cargo": "Medico"}', '192.168.1.100', 'Mozilla/5.0', 'exitoso'),
-(12, 'CREATE', 'Médicos', 'Registro de especialidad dermatología', 'medicos', 6, NULL, '{"empleado_id": 13, "especialidad": "Dermatología"}', '192.168.1.100', 'Mozilla/5.0', 'exitoso'),
-(6, 'CREATE', 'Medicamentos', 'Ingreso de medicamento Paracetamol', 'medicamentos', 1, NULL, '{"nombre": "Paracetamol", "stock": 500}', '192.168.1.104', 'Mozilla/5.0', 'exitoso'),
-(7, 'UPDATE', 'Medicamentos', 'Actualización de stock por dispensación', 'medicamentos', 1, '{"stock": 500}', '{"stock": 480}', '192.168.1.106', 'Mozilla/5.0', 'exitoso'),
-(1, 'CREATE', 'Historias', 'Creación de historia clínica', 'historias', 1, NULL, '{"identificador": "HC-2025-001"}', '192.168.1.102', 'Mozilla/5.0', 'exitoso');
+(17, 'CREATE', 'Pacientes', 'Creación de paciente Andrea López', 'pacientes', 1, NULL, '{"nombre": "Andrea", "apellido": "López"}', '192.168.1.100', 'Mozilla/5.0', 'exitoso'),
+(17, 'CREATE', 'Pacientes', 'Creación de paciente Ricardo Martínez', 'pacientes', 2, NULL, '{"nombre": "Ricardo", "apellido": "Martínez"}', '192.168.1.100', 'Mozilla/5.0', 'exitoso'),
+(15, 'CREATE', 'Citas', 'Agendamiento de cita cardiológica', 'citas', 1, NULL, '{"paciente_id": 1, "medico_id": 2, "fecha": "2025-11-10"}', '192.168.1.101', 'Mozilla/5.0', 'exitoso'),
+(15, 'CREATE', 'Citas', 'Agendamiento de cita pediátrica', 'citas', 2, NULL, '{"paciente_id": 2, "medico_id": 3, "fecha": "2025-11-10"}', '192.168.1.101', 'Mozilla/5.0', 'exitoso'),
+(6, 'CREATE', 'Consultas', 'Registro de consulta por resfriado común', 'consultas', 1, NULL, '{"paciente_id": 3, "diagnostico": "Resfriado común"}', '192.168.1.102', 'Mozilla/5.0', 'exitoso'),
+(8, 'CREATE', 'Consultas', 'Registro de examen ginecológico', 'consultas', 2, NULL, '{"paciente_id": 4, "diagnostico": "Examen ginecológico"}', '192.168.1.103', 'Mozilla/5.0', 'exitoso'),
+(11, 'CREATE', 'Recetas', 'Emisión de receta médica', 'recetas', 1, NULL, '{"consulta_id": 1, "paciente_id": 3}', '192.168.1.104', 'Mozilla/5.0', 'exitoso'),
+(11, 'UPDATE', 'Recetas', 'Dispensación de receta en farmacia', 'recetas', 1, '{"estado": "emitida"}', '{"estado": "dispensada"}', '192.168.1.104', 'Mozilla/5.0', 'exitoso'),
+(15, 'UPDATE', 'Citas', 'Cambio de estado de cita a completada', 'citas', 3, '{"estado": "programada"}', '{"estado": "completada"}', '192.168.1.101', 'Mozilla/5.0', 'exitoso'),
+(16, 'CREATE', 'Citas', 'Agendamiento de cita para vacunación', 'citas', 7, NULL, '{"paciente_id": 7, "medico_id": 3, "fecha": "2025-11-11"}', '192.168.1.105', 'Mozilla/5.0', 'exitoso'),
+(17, 'CREATE', 'Empleados', 'Registro de nuevo médico Roberto Díaz', 'empleados', 18, NULL, '{"nombre": "Roberto", "cargo": "Medico"}', '192.168.1.100', 'Mozilla/5.0', 'exitoso'),
+(17, 'CREATE', 'Médicos', 'Registro de especialidad dermatología', 'medicos', 7, NULL, '{"empleado_id": 18, "especialidad": "Dermatología"}', '192.168.1.100', 'Mozilla/5.0', 'exitoso'),
+(11, 'CREATE', 'Medicamentos', 'Ingreso de medicamento Paracetamol', 'medicamentos', 1, NULL, '{"nombre": "Paracetamol", "stock": 500}', '192.168.1.104', 'Mozilla/5.0', 'exitoso'),
+(12, 'UPDATE', 'Medicamentos', 'Actualización de stock por dispensación', 'medicamentos', 1, '{"stock": 500}', '{"stock": 480}', '192.168.1.106', 'Mozilla/5.0', 'exitoso'),
+(6, 'CREATE', 'Historias', 'Creación de historia clínica', 'historias', 1, NULL, '{"identificador": "HC-2025-001"}', '192.168.1.102', 'Mozilla/5.0', 'exitoso');
 
 -- Habilitar verificación de claves foráneas
 SET FOREIGN_KEY_CHECKS = 1;
@@ -248,5 +247,4 @@ UNION ALL SELECT 'medicamentos', COUNT(*) FROM medicamentos
 UNION ALL SELECT 'lotes', COUNT(*) FROM lotes
 UNION ALL SELECT 'recetas', COUNT(*) FROM recetas
 UNION ALL SELECT 'asistencias', COUNT(*) FROM asistencias
-UNION ALL SELECT 'encuestas', COUNT(*) FROM encuestas_satisfaccion
 UNION ALL SELECT 'auditoria', COUNT(*) FROM auditoria;

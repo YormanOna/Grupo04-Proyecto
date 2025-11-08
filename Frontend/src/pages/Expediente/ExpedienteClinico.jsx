@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   FileText, Search, AlertCircle, User, Calendar, Activity, 
@@ -9,6 +9,7 @@ import {
 import toast from 'react-hot-toast'
 import { useAuth } from '../../context/AuthContext'
 import expedienteService from '../../services/expedienteService'
+import { buscarPacientes } from '../../services/pacienteService'
 import { 
   validarSignosVitales, 
   getBgColorClass, 
@@ -23,6 +24,10 @@ const ExpedienteClinico = () => {
   const [busqueda, setBusqueda] = useState('')
   const [buscando, setBuscando] = useState(false)
   const [expediente, setExpediente] = useState(null)
+  const [sugerencias, setSugerencias] = useState([])
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false)
+  const [buscandoSugerencias, setBuscandoSugerencias] = useState(false)
+  const searchRef = useRef(null)
   const [seccionesAbiertas, setSeccionesAbiertas] = useState({
     identificacion: true,
     alergias: true,
@@ -41,6 +46,44 @@ const ExpedienteClinico = () => {
       buscarExpedienteAutomatico(queryParam)
     }
   }, [searchParams])
+
+  // Cerrar sugerencias al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setMostrarSugerencias(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Buscar sugerencias mientras el usuario escribe
+  useEffect(() => {
+    const buscarSugerenciasDebounce = async () => {
+      if (busqueda.trim().length < 2) {
+        setSugerencias([])
+        setMostrarSugerencias(false)
+        return
+      }
+
+      setBuscandoSugerencias(true)
+      try {
+        const pacientes = await buscarPacientes(busqueda.trim())
+        setSugerencias(pacientes.slice(0, 5)) // Mostrar solo 5 sugerencias
+        setMostrarSugerencias(pacientes.length > 0)
+      } catch (error) {
+        console.error('Error buscando sugerencias:', error)
+        setSugerencias([])
+      } finally {
+        setBuscandoSugerencias(false)
+      }
+    }
+
+    const timer = setTimeout(buscarSugerenciasDebounce, 300)
+    return () => clearTimeout(timer)
+  }, [busqueda])
 
   const buscarExpedienteAutomatico = async (query) => {
     setBuscando(true)
@@ -89,6 +132,30 @@ const ExpedienteClinico = () => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       buscarExpediente()
+      setMostrarSugerencias(false)
+    } else if (e.key === 'Escape') {
+      setMostrarSugerencias(false)
+    }
+  }
+
+  const seleccionarSugerencia = async (paciente) => {
+    // Buscar por cédula del paciente
+    setBusqueda(paciente.cedula.toString())
+    setMostrarSugerencias(false)
+    
+    // Buscar expediente inmediatamente
+    setBuscando(true)
+    try {
+      const data = await expedienteService.buscarExpediente(paciente.cedula.toString())
+      setExpediente(data)
+      toast.success(`Expediente de ${paciente.nombre} ${paciente.apellido} cargado`)
+    } catch (error) {
+      console.error('Error:', error)
+      const mensaje = error.response?.data?.detail || 'No se encontró el expediente'
+      toast.error(mensaje)
+      setExpediente(null)
+    } finally {
+      setBuscando(false)
     }
   }
 
@@ -157,9 +224,7 @@ const ExpedienteClinico = () => {
               <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               Expediente Clínico Electrónico
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              RF-002: Gestión integral del expediente del paciente
-            </p>
+          
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -174,19 +239,60 @@ const ExpedienteClinico = () => {
         {/* Buscador */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 border-blue-200 dark:border-blue-800">
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            Buscar por Número de Historia Clínica o Cédula
+            Buscar por Número de Historia Clínica, Cédula o Nombre
           </label>
           <div className="flex gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <div className="flex-1 relative" ref={searchRef}>
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
               <input
                 type="text"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ej: HC-2024-001 o 1234567890"
+                onFocus={() => sugerencias.length > 0 && setMostrarSugerencias(true)}
+                placeholder="Ej: HC-2024-001, 1234567890 o Juan Pérez"
                 className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
               />
+              
+              {/* Sugerencias de autocompletado */}
+              {mostrarSugerencias && sugerencias.length > 0 && (
+                <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-lg shadow-2xl max-h-80 overflow-y-auto">
+                  {buscandoSugerencias ? (
+                    <div className="p-4 text-center text-gray-500">
+                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                      Buscando...
+                    </div>
+                  ) : (
+                    <div className="py-2">
+                      {sugerencias.map((paciente) => (
+                        <button
+                          key={paciente.id}
+                          onClick={() => seleccionarSugerencia(paciente)}
+                          className="w-full px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-left border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
+                              {paciente.nombre.charAt(0)}{paciente.apellido.charAt(0)}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-800 dark:text-white">
+                                {paciente.nombre} {paciente.apellido}
+                              </p>
+                              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                                <span>CI: {paciente.cedula}</span>
+                                {paciente.numero_historia_clinica && (
+                                  <span>HC: {paciente.numero_historia_clinica}</span>
+                                )}
+                              </div>
+                            </div>
+                            <User className="w-5 h-5 text-gray-400" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <button
               onClick={buscarExpediente}
@@ -197,6 +303,13 @@ const ExpedienteClinico = () => {
               {buscando ? 'Buscando...' : 'Buscar'}
             </button>
           </div>
+          
+          {/* Indicador de búsqueda activa */}
+          {busqueda.length > 0 && busqueda.length < 2 && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              💡 Escribe al menos 2 caracteres para ver sugerencias
+            </p>
+          )}
         </div>
       </div>
 

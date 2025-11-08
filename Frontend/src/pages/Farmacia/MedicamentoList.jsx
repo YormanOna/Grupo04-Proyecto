@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { getMedicamentos, createMedicamento } from '../../services/medicamentoService'
-import { Pill, Search, Plus, Package, AlertTriangle, TrendingUp, Edit, Trash2, X } from 'lucide-react'
+import { Pill, Search, Plus, Package, AlertTriangle, TrendingUp, Edit, Trash2, X, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useAuth } from '../../context/AuthContext'
 import FormField from '../../components/FormField'
 
 const MedicamentoList = () => {
+  const { user } = useAuth()
   const [medicamentos, setMedicamentos] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
@@ -16,6 +18,10 @@ const MedicamentoList = () => {
   })
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
+
+  // Permisos: Solo Administradores pueden crear/editar/eliminar medicamentos
+  const isAdmin = user?.cargo === 'Administrador' || user?.cargo === 'Admin General'
+  const isFarmaceutico = user?.cargo === 'Farmaceutico'
 
   useEffect(() => {
     loadMedicamentos()
@@ -168,16 +174,21 @@ const MedicamentoList = () => {
           </div>
           <div>
             <h2 className="text-3xl font-bold text-gray-800">Farmacia</h2>
-            <p className="text-gray-600">Inventario de medicamentos</p>
+            <p className="text-gray-600">
+              {isFarmaceutico ? 'Inventario de medicamentos (Solo lectura)' : 'Inventario de medicamentos'}
+            </p>
           </div>
         </div>
-        <button 
-          onClick={() => setShowModal(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-xl hover:from-orange-700 hover:to-orange-800 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Agregar Medicamento</span>
-        </button>
+        {/* Botón Agregar solo para Administradores */}
+        {isAdmin && (
+          <button 
+            onClick={() => setShowModal(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-xl hover:from-orange-700 hover:to-orange-800 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Agregar Medicamento</span>
+          </button>
+        )}
       </div>
 
       {/* Búsqueda */}
@@ -303,17 +314,26 @@ const MedicamentoList = () => {
                     </div>
                   )}
 
-                  {/* Acciones */}
-                  <div className="flex space-x-2 pt-4 border-t border-gray-200">
-                    <button className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors">
-                      <Edit className="w-4 h-4" />
-                      <span>Editar</span>
-                    </button>
-                    <button className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                      <span>Eliminar</span>
-                    </button>
-                  </div>
+                  {/* Acciones - Solo para Administradores */}
+                  {isAdmin ? (
+                    <div className="flex space-x-2 pt-4 border-t border-gray-200">
+                      <button className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors">
+                        <Edit className="w-4 h-4" />
+                        <span>Editar</span>
+                      </button>
+                      <button className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                        <span>Eliminar</span>
+                      </button>
+                    </div>
+                  ) : isFarmaceutico && (
+                    <div className="pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
+                        <Eye className="w-4 h-4" />
+                        <span>Vista de solo lectura - Farmacéutico</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )

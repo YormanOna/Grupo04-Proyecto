@@ -548,7 +548,8 @@ def generar_comprobante_cita_pdf(cita, paciente, medico=None):
     qr = qrcode.QRCode(version=1, box_size=8, border=2)
     qr.add_data(qr_data)
     qr.make(fit=True)
-    qr_img = qr.make_image(fill_color=COLORS['dark'], back_color="white")
+    # qrcode requiere string o tupla, no objeto Color de ReportLab
+    qr_img = qr.make_image(fill_color="black", back_color="white")
     
     qr_buffer = BytesIO()
     qr_img.save(qr_buffer, format='PNG')

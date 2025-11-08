@@ -20,7 +20,7 @@ class Auditoria(Base):
     ip_address = Column(String(50), nullable=True)  # IP desde donde se realizó la acción
     user_agent = Column(String(500), nullable=True)  # Navegador/dispositivo usado
     estado = Column(String(20), default='exitoso')  # exitoso, fallido, advertencia
-    fecha_hora = Column(DateTime, default=datetime.now, nullable=False)
+    fecha_hora = Column(DateTime, default=datetime.utcnow, nullable=False)
     detalles_adicionales = Column(JSON, nullable=True)  # Información extra en formato JSON
 
     # Relaciones

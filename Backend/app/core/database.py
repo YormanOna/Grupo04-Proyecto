@@ -23,7 +23,7 @@ def get_db():
 
 def init_db():
     # Import models here so they are registered with Base.metadata
-    from app.models import empleado, paciente, medico, cita, historia, consulta, farmacia, medicamento, signos_vitales, asistencia, receta, encuesta, auditoria
+    from app.models import empleado, paciente, medico, cita, historia, consulta, farmacia, medicamento, signos_vitales, asistencia, receta, auditoria
     try:
         Base.metadata.create_all(bind=engine)
         print("Database tables created or already exist.")

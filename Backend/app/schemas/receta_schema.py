@@ -23,6 +23,12 @@ class RecetaOut(RecetaBase):
     observaciones: Optional[str]
     lote: Optional[str]
     fecha_vencimiento: Optional[date]  # Corregido: debe ser date, no datetime
+    
+    # Campos adicionales para farmacéuticos
+    paciente_nombre: Optional[str] = None
+    paciente_cedula: Optional[int] = None
+    medico_nombre: Optional[str] = None
+    farmaceutico_nombre: Optional[str] = None
 
     class Config:
         orm_mode = True
