@@ -18,7 +18,7 @@ class Asistencia(Base):
     observaciones = Column(String(255), nullable=True)
 
     # Relación con Empleado
-    empleado = relationship("Empleado", foreign_keys=[empleado_id])
+    empleado = relationship("Empleado", back_populates="asistencias", foreign_keys=[empleado_id])
 
     def __repr__(self):
         return f"<Asistencia {self.empleado_id} - {self.fecha_entrada}>"

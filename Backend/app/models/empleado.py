@@ -26,7 +26,19 @@ class Empleado(Base):
 
     # Relaciones
     # Consultas donde el empleado actúa como médico
-    consultas = relationship("Consulta", back_populates="medico_empleado", cascade="all, delete-orphan")
+    consultas = relationship("Consulta", back_populates="medico_empleado", foreign_keys="Consulta.medico_id", cascade="all, delete-orphan")
     
     # Citas donde el empleado es el encargado administrativo
     citas = relationship("Cita", back_populates="encargado", foreign_keys="Cita.encargado_id", cascade="all, delete-orphan")
+    
+    # Recetas emitidas como médico
+    recetas_emitidas = relationship("Receta", back_populates="medico", foreign_keys="Receta.medico_id")
+    
+    # Recetas dispensadas como farmacéutico
+    recetas_dispensadas = relationship("Receta", back_populates="farmaceutico", foreign_keys="Receta.dispensada_por")
+    
+    # Asistencias del empleado
+    asistencias = relationship("Asistencia", back_populates="empleado", cascade="all, delete-orphan")
+    
+    # Auditorías realizadas por el empleado
+    auditorias = relationship("Auditoria", back_populates="usuario", foreign_keys="Auditoria.usuario_id")

@@ -34,6 +34,7 @@ class Consulta(Base):
 
     # Relaciones
     cita = relationship("Cita", back_populates="consultas")
-    medico_empleado = relationship("Empleado", back_populates="consultas")
+    medico_empleado = relationship("Empleado", back_populates="consultas", foreign_keys=[medico_id])
     historia = relationship("Historia", back_populates="consultas")
     paciente = relationship("Paciente", back_populates="consultas")
+    recetas = relationship("Receta", back_populates="consulta", foreign_keys="Receta.consulta_id")

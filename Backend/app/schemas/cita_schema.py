@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from app.schemas.paciente_schema import PacienteOut
+from app.schemas.medico_schema import MedicoOut
 
 class CitaBase(BaseModel):
     fecha: datetime
@@ -32,13 +34,22 @@ class CitaOut(CitaBase):
     medico_id: Optional[int] = None
     encargado_id: Optional[int] = None
     observaciones_cancelacion: Optional[str] = None
+    
     # Campos opcionales para información adicional (sin validación estricta)
     paciente_nombre: Optional[str] = None
     paciente_apellido: Optional[str] = None
     paciente_cedula: Optional[str] = None
+    paciente_edad: Optional[int] = None  # ¡AGREGADO! Edad calculada del paciente
+    paciente_genero: Optional[str] = None
+    paciente_telefono: Optional[str] = None
+    
     medico_nombre: Optional[str] = None
     medico_apellido: Optional[str] = None
     medico_especialidad: Optional[str] = None
+    
+    # Relaciones completas (opcional, para respuestas detalladas)
+    paciente: Optional[PacienteOut] = None
+    medico: Optional[MedicoOut] = None
 
     class Config:
         orm_mode = True

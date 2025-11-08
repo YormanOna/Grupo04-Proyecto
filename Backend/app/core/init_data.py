@@ -16,6 +16,7 @@ def create_default_users(db: Session):
     Crea usuarios por defecto si no existen en la base de datos
     """
     default_users = [
+        # Usuarios del sistema base
         {
             "nombre": "Super",
             "apellido": "Admin",
@@ -55,6 +56,127 @@ def create_default_users(db: Session):
             "cargo": "Farmaceutico",
             "email": "farmacia@hospital.com",
             "password": "farma123"
+        },
+        # Usuarios de datos de ejemplo (InsertDatos.sql)
+        {
+            "nombre": "Carlos",
+            "apellido": "Méndez",
+            "cedula": 1104567890,
+            "cargo": "Medico",
+            "email": "carlos.mendez@hospital.com",
+            "password": "medico123"
+        },
+        {
+            "nombre": "María",
+            "apellido": "González",
+            "cedula": 1104567891,
+            "cargo": "Medico",
+            "email": "maria.gonzalez@hospital.com",
+            "password": "medico123"
+        },
+        {
+            "nombre": "Juan",
+            "apellido": "Rodríguez",
+            "cedula": 1104567892,
+            "cargo": "Medico",
+            "email": "juan.rodriguez@hospital.com",
+            "password": "medico123"
+        },
+        {
+            "nombre": "Ana",
+            "apellido": "Pérez",
+            "cedula": 1104567893,
+            "cargo": "Medico",
+            "email": "ana.perez@hospital.com",
+            "password": "medico123"
+        },
+        {
+            "nombre": "Luis",
+            "apellido": "Torres",
+            "cedula": 1104567894,
+            "cargo": "Medico",
+            "email": "luis.torres@hospital.com",
+            "password": "medico123"
+        },
+        {
+            "nombre": "Carmen",
+            "apellido": "Sánchez",
+            "cedula": 1104567895,
+            "cargo": "Farmaceutico",
+            "email": "carmen.sanchez@hospital.com",
+            "password": "farma123"
+        },
+        {
+            "nombre": "Pedro",
+            "apellido": "Ramírez",
+            "cedula": 1104567896,
+            "cargo": "Farmaceutico",
+            "email": "pedro.ramirez@hospital.com",
+            "password": "farma123"
+        },
+        {
+            "nombre": "Sofia",
+            "apellido": "Jiménez",
+            "cedula": 1104567897,
+            "cargo": "Enfermera",
+            "email": "sofia.jimenez@hospital.com",
+            "password": "enfer123"
+        },
+        {
+            "nombre": "Miguel",
+            "apellido": "Castro",
+            "cedula": 1104567898,
+            "cargo": "Enfermera",
+            "email": "miguel.castro@hospital.com",
+            "password": "enfer123"
+        },
+        {
+            "nombre": "Laura",
+            "apellido": "Morales",
+            "cedula": 1104567899,
+            "cargo": "Administrador",
+            "email": "laura.morales@hospital.com",
+            "password": "admin123"
+        },
+        {
+            "nombre": "Diego",
+            "apellido": "Vargas",
+            "cedula": 1104567900,
+            "cargo": "Administrador",
+            "email": "diego.vargas@hospital.com",
+            "password": "admin123"
+        },
+        {
+            "nombre": "Patricia",
+            "apellido": "Herrera",
+            "cedula": 1104567901,
+            "cargo": "Admin General",
+            "email": "patricia.herrera@hospital.com",
+            "password": "superadmin123"
+        },
+        {
+            "nombre": "Roberto",
+            "apellido": "Díaz",
+            "cedula": 1104567902,
+            "cargo": "Medico",
+            "email": "roberto.diaz@hospital.com",
+            "password": "medico123"
+        },
+        {
+            "nombre": "Valeria",
+            "apellido": "Ruiz",
+            "cedula": 1104567903,
+            "cargo": "Medico",
+            "email": "valeria.ruiz@hospital.com",
+            "password": "medico123"
+        },
+        {
+            "nombre": "Fernando",
+            "apellido": "Ortiz",
+            "cedula": 1104567904,
+            "cargo": "Medico",
+            "email": "fernando.ortiz@hospital.com",
+            "password": "medico123"
         }
     ]
     

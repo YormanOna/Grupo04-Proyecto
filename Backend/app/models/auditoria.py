@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
 
@@ -6,7 +7,7 @@ class Auditoria(Base):
     __tablename__ = "auditoria"
 
     id = Column(Integer, primary_key=True, index=True)
-    usuario_id = Column(Integer, nullable=True)  # ID del empleado que realiza la acción
+    usuario_id = Column(Integer, ForeignKey("empleados.id", ondelete="SET NULL"), nullable=True)  # ID del empleado que realiza la acción
     usuario_nombre = Column(String(200), nullable=True)  # Nombre completo para referencia rápida
     usuario_cargo = Column(String(50), nullable=True)  # Cargo del usuario
     accion = Column(String(100), nullable=False)  # CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
@@ -21,6 +22,9 @@ class Auditoria(Base):
     estado = Column(String(20), default='exitoso')  # exitoso, fallido, advertencia
     fecha_hora = Column(DateTime, default=datetime.now, nullable=False)
     detalles_adicionales = Column(JSON, nullable=True)  # Información extra en formato JSON
+
+    # Relaciones
+    usuario = relationship("Empleado", back_populates="auditorias", foreign_keys=[usuario_id])
 
     def __repr__(self):
         return f"<Auditoria {self.id}: {self.usuario_nombre} - {self.accion} en {self.modulo}>"

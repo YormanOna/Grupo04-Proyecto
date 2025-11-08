@@ -150,6 +150,9 @@ def list_citas(db: Session, medico_id: int = None):
             cita.paciente_nombre = cita.paciente.nombre
             cita.paciente_apellido = cita.paciente.apellido
             cita.paciente_cedula = str(cita.paciente.cedula)
+            cita.paciente_edad = cita.paciente.edad  # Edad calculada desde fecha_nacimiento
+            cita.paciente_genero = cita.paciente.genero
+            cita.paciente_telefono = cita.paciente.telefono
         
         if cita.medico:
             if cita.medico.empleado:
@@ -174,6 +177,9 @@ def get_cita(db: Session, cita_id: int):
             cita.paciente_nombre = cita.paciente.nombre
             cita.paciente_apellido = cita.paciente.apellido
             cita.paciente_cedula = str(cita.paciente.cedula)
+            cita.paciente_edad = cita.paciente.edad  # Edad calculada desde fecha_nacimiento
+            cita.paciente_genero = cita.paciente.genero
+            cita.paciente_telefono = cita.paciente.telefono
         
         if cita.medico:
             if cita.medico.empleado:
@@ -413,6 +419,9 @@ def obtener_citas_por_fecha(db: Session, fecha: date, medico_id: int = None):
             cita.paciente_nombre = cita.paciente.nombre
             cita.paciente_apellido = cita.paciente.apellido
             cita.paciente_cedula = str(cita.paciente.cedula)
+            cita.paciente_edad = cita.paciente.edad  # Edad calculada desde fecha_nacimiento
+            cita.paciente_genero = cita.paciente.genero
+            cita.paciente_telefono = cita.paciente.telefono
         
         if cita.medico:
             if cita.medico.empleado:

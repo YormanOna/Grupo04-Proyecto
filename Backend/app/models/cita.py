@@ -26,7 +26,10 @@ class Cita(Base):
 
     # Relación con Empleado encargado/administrativo (N:1)
     encargado_id = Column(Integer, ForeignKey("empleados.id"), nullable=True)
-    encargado = relationship("Empleado", back_populates="citas")
+    encargado = relationship("Empleado", back_populates="citas", foreign_keys=[encargado_id])
     
     # Relación con Consultas (1:N)
     consultas = relationship("Consulta", back_populates="cita")
+    
+    # Relación con Encuestas (1:N)
+    encuestas = relationship("EncuestaSatisfaccion", back_populates="cita")

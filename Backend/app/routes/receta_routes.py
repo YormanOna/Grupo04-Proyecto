@@ -11,6 +11,7 @@ from app.services.receta_service import (
     dispensar_receta,
     cancelar_receta
 )
+from app.services.validacion_farmaceutica_service import ValidacionFarmaceuticaService
 from app.core.permissions import get_current_user, admin_or_medic, admin_or_pharmacist
 from app.utils.pdf_generator import generar_receta_pdf
 from app.models.receta import Receta
@@ -62,6 +63,29 @@ def obtener(
     if not receta:
         raise HTTPException(404, "Receta no encontrada")
     return receta
+
+@router.post("/validar-prescripcion")
+def validar_prescripcion(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(admin_or_pharmacist)
+):
+    """
+    RF-004: Validar una prescripción antes de dispensar
+    Verifica: stock, alergias, interacciones, dosis
+    Retorna alertas críticas, advertencias e info
+    """
+    paciente_id = payload.get("paciente_id")
+    medicamentos = payload.get("medicamentos", [])
+    
+    if not paciente_id or not medicamentos:
+        raise HTTPException(400, "Debe proporcionar paciente_id y medicamentos")
+    
+    resultado = ValidacionFarmaceuticaService.validar_prescripcion(
+        db, paciente_id, medicamentos
+    )
+    
+    return resultado
 
 @router.post("/{receta_id}/dispensar", response_model=RecetaOut)
 def dispensar(

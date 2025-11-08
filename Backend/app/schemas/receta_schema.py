@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 
 class RecetaBase(BaseModel):
     medicamentos: str
@@ -22,7 +22,7 @@ class RecetaOut(RecetaBase):
     fecha_dispensacion: Optional[datetime]
     observaciones: Optional[str]
     lote: Optional[str]
-    fecha_vencimiento: Optional[datetime]
+    fecha_vencimiento: Optional[date]  # Corregido: debe ser date, no datetime
 
     class Config:
         orm_mode = True

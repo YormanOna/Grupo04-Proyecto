@@ -6,7 +6,7 @@ from app.core.database import SessionLocal
 from app.schemas.consulta_schema import ConsultaCreate, ConsultaOut, ConsultaUpdate
 from app.services.consulta_service import create_consulta, list_consultas, get_consulta, update_consulta
 from app.utils.pdf_generator import generar_comprobante_cita_pdf
-from app.utils.email_utils import enviar_email
+from app.utils.email_utils import send_email
 from app.models.paciente import Paciente
 from app.models.cita import Cita
 from app.models.medico import Medico
@@ -126,13 +126,12 @@ def generar_comprobante_consulta(
                 <p><em>Este es un correo automático, por favor no responder.</em></p>
                 """
                 
-                # Enviar email con PDF adjunto
-                enviar_email(
-                    destinatario=paciente.email,
-                    asunto=asunto,
-                    cuerpo=cuerpo,
-                    adjunto=pdf_bytes,
-                    nombre_adjunto=f"Comprobante_Consulta_{consulta.id}.pdf"
+                # Enviar email (nota: adjuntos no soportados en versión actual)
+                send_email(
+                    to_email=paciente.email,
+                    subject=asunto,
+                    body=cuerpo,
+                    body_html=cuerpo
                 )
                 
                 # Resetear buffer para la respuesta

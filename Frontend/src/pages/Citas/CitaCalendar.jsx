@@ -100,7 +100,8 @@ const CitaCalendar = () => {
 
     // Filtrar por médico si es necesario
     if (isMedico) {
-      citasFiltradas = citasFiltradas.filter(cita => cita.medico_id === user.empleado_id)
+      // CORREGIDO: usar user.id (ID de médico) en lugar de user.empleado_id
+      citasFiltradas = citasFiltradas.filter(cita => cita.medico_id === user.id)
     } else if (filtroMedico !== 'todos') {
       citasFiltradas = citasFiltradas.filter(cita => cita.medico_id === parseInt(filtroMedico))
     }

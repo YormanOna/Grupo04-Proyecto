@@ -11,7 +11,7 @@ from app.services.historia_service import (
     buscar_expediente_completo,
     get_expediente_por_paciente
 )
-from app.services.auditoria_service import registrar_accion
+from app.services.auditoria_service import auditoria_service
 from app.models.empleado import Empleado
 
 router = APIRouter()
@@ -56,7 +56,7 @@ def buscar_expediente(
     # Registrar acceso al expediente en auditoría (RF-002)
     usuario = db.query(Empleado).filter(Empleado.id == current_user["id"]).first()
     if usuario:
-        registrar_accion(
+        auditoria_service.registrar_accion(
             db=db,
             usuario_id=usuario.id,
             usuario_nombre=f"{usuario.nombre} {usuario.apellido}",
@@ -162,7 +162,7 @@ def obtener_expediente(
     # Registrar acceso en auditoría
     usuario = db.query(Empleado).filter(Empleado.id == current_user["id"]).first()
     if usuario:
-        registrar_accion(
+        auditoria_service.registrar_accion(
             db=db,
             usuario_id=usuario.id,
             usuario_nombre=f"{usuario.nombre} {usuario.apellido}",

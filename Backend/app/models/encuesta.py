@@ -30,8 +30,8 @@ class EncuestaSatisfaccion(Base):
     recomendaria = Column(String(10), nullable=True)  # Si/No
 
     # Relaciones
-    paciente = relationship("Paciente", foreign_keys=[paciente_id])
-    cita = relationship("Cita", foreign_keys=[cita_id])
+    paciente = relationship("Paciente", back_populates="encuestas", foreign_keys=[paciente_id])
+    cita = relationship("Cita", back_populates="encuestas", foreign_keys=[cita_id])
 
     def __repr__(self):
         return f"<EncuestaSatisfaccion {self.id} - Paciente: {self.paciente_id}>"

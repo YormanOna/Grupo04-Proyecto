@@ -117,3 +117,36 @@ def medical_consultation_only(current_user: dict = Depends(get_current_user)):
 def any_authenticated(current_user: dict = Depends(get_current_user)):
     """Cualquier usuario autenticado (Admin General tiene acceso automático)"""
     return current_user
+
+def verificar_permisos(current_user: dict, allowed_roles: list):
+    """
+    Verifica que el usuario actual tenga uno de los roles permitidos
+    Mapea nombres de roles en español/inglés a los roles del sistema
+    """
+    # Mapeo de roles
+    role_mapping = {
+        "super_admin": "Admin General",
+        "admin": "Administrador",
+        "medico": "Medico",
+        "farmaceutico": "Farmaceutico",
+        "enfermero": "Enfermera",
+        "recepcionista": "Administrador",
+    }
+    
+    # Convertir roles permitidos usando el mapeo
+    mapped_roles = []
+    for role in allowed_roles:
+        if role in role_mapping:
+            mapped_roles.append(role_mapping[role])
+        else:
+            mapped_roles.append(role)
+    
+    # Verificar si el usuario tiene uno de los roles permitidos
+    user_cargo = current_user.get("cargo")
+    if user_cargo not in mapped_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"No tienes permisos. Se requiere uno de estos roles: {', '.join(mapped_roles)}"
+        )
+    
+    return True
