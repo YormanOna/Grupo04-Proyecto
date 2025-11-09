@@ -1,0 +1,107 @@
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                 PRUEBAS DE CARGA Y ESTRÉS - LOCUST                          ║
+║              Sistema de Gestión Médica - Grupo 04                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+DESCRIPCIÓN:
+    Este archivo contiene pruebas de carga y estrés para el Sistema de Gestión
+    Médica utilizando Locust. Simula diferentes tipos de usuarios y patrones
+    de uso realistas.
+
+INSTALACIÓN:
+    pip install locust
+
+EJECUCIÓN:
+    # Modo Web UI (recomendado)
+    locust -f locustfile.py --host=http://localhost:8000
+    # Abrir: http://localhost:8089
+
+    # Modo Headless (sin interfaz)
+    locust -f locustfile.py --host=http://localhost:8000 --users 100 --spawn-rate 10 --run-time 5m --headless
+
+    # Modo distribuido (múltiples workers)
+    locust -f locustfile.py --host=http://localhost:8000 --master
+    locust -f locustfile.py --host=http://localhost:8000 --worker
+
+ESCENARIOS DE PRUEBA:
+    1. RecepcionistaUser    - Gestión de citas y pacientes (40% del tráfico)
+    2. MedicoUser           - Consultas y recetas (30% del tráfico)
+    3. EnfermeraUser        - Signos vitales y triaje (15% del tráfico)
+    4. FarmaceuticoUser     - Dispensación de medicamentos (10% del tráfico)
+    5. AdminUser            - Gestión general (5% del tráfico)
+
+MÉTRICAS EVALUADAS:
+    - Response Time (tiempo de respuesta)
+    - Throughput (solicitudes por segundo)
+    - Error Rate (tasa de errores)
+    - Concurrent Users (usuarios simultáneos)
+    - Resource Usage (uso de recursos)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIGURACIÓN FINAL
+# ═══════════════════════════════════════════════════════════════════════════════
+
+INSTRUCCIONES DE USO:
+
+1. CONFIGURACIÓN BÁSICA:
+   - Asegúrate de que el backend esté corriendo en http://localhost:8000
+   - Asegúrate de que los usuarios de prueba existan en la base de datos
+
+2. EJECUTAR PRUEBAS:
+   
+   a) Modo Web UI (Recomendado para desarrollo):
+      locust -f locustfile.py --host=http://localhost:8000
+      Abre http://localhost:8089
+      
+   b) Modo Headless (Recomendado para CI/CD):
+      locust -f locustfile.py --host=http://localhost:8000 \
+             --users 100 --spawn-rate 10 --run-time 5m --headless
+   
+   c) Modo Distribuido (Para pruebas intensivas):
+      # Terminal 1 (Master)
+      locust -f locustfile.py --host=http://localhost:8000 --master
+      
+      # Terminal 2, 3, 4... (Workers)
+      locust -f locustfile.py --host=http://localhost:8000 --worker
+
+3. PARÁMETROS RECOMENDADOS:
+   
+   - Prueba Ligera (Desarrollo):
+     Usuarios: 10-20
+     Spawn rate: 5 usuarios/seg
+     Duración: 2-5 minutos
+   
+   - Prueba Media (QA):
+     Usuarios: 50-100
+     Spawn rate: 10 usuarios/seg
+     Duración: 10-15 minutos
+   
+   - Prueba de Carga (Pre-producción):
+     Usuarios: 200-500
+     Spawn rate: 20 usuarios/seg
+     Duración: 30-60 minutos
+   
+   - Prueba de Estrés (Límites):
+     Usuarios: 1000+
+     Spawn rate: 50 usuarios/seg
+     Duración: 60+ minutos
+
+4. MÉTRICAS A MONITOREAR:
+   - Response Time (ms): < 500ms aceptable, < 200ms excelente
+   - Throughput (RPS): Solicitudes por segundo
+   - Error Rate (%): < 1% aceptable, 0% ideal
+   - 95th Percentile: Tiempo máximo para el 95% de requests
+   - Concurrent Users: Usuarios simultáneos soportados
+
+5. EXPORTAR RESULTADOS:
+   locust -f locustfile.py --host=http://localhost:8000 \
+          --users 100 --spawn-rate 10 --run-time 5m --headless \
+          --html=reporte.html --csv=resultados
+
+6. TROUBLESHOOTING:
+   - Si hay muchos errores 401: Verificar que los usuarios existan
+   - Si hay errores 404: Verificar que los endpoints existan
+   - Si hay timeouts: Reducir número de usuarios o spawn rate
+   - Si el backend se cae: Tu sistema necesita optimización
+

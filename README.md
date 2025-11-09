@@ -11,7 +11,6 @@ Sistema integral de gestión hospitalaria desarrollado con FastAPI (Backend) y R
   - [Clonar el Repositorio](#1-clonar-el-repositorio)
   - [Configurar Backend](#2-configurar-backend)
   - [Configurar Frontend](#3-configurar-frontend)
-  - [Configurar Base de Datos](#4-configurar-base-de-datos)
 - [Ejecución](#-ejecución)
 - [Documentación API](#-documentación-api)
 - [Usuarios por Defecto](#-usuarios-por-defecto)
@@ -74,9 +73,6 @@ Sistema integral de gestión hospitalaria desarrollado con FastAPI (Backend) y R
 # HTTPS
 git clone https://github.com/YormanOna/Grupo04-Proyecto.git
 
-# SSH
-git clone git@github.com:YormanOna/Grupo04-Proyecto.git
-
 # Navegar al directorio
 cd Grupo04-Proyecto
 ```
@@ -123,7 +119,11 @@ Crear un archivo `.env` en la carpeta `Backend/`:
 
 ```env
 # Base de datos
-DATABASE_URL=mysql+pymysql://root:tu_password@localhost:3306/GestionMedicaDB
+DB_USER=
+DB_PASSWORD=
+DB_HOST=
+DB_PORT=
+DB_NAME=GestionMedicaDB
 
 # JWT
 SECRET_KEY=tu_clave_secreta_muy_segura_aqui
@@ -160,40 +160,6 @@ Crear un archivo `.env` en la carpeta `Frontend/`:
 ```env
 VITE_API_URL=http://localhost:8000
 ```
-
----
-
-### 4. Configurar Base de Datos
-
-#### Paso 1: Crear la Base de Datos
-
-Ejecutar el script de creación:
-
-```bash
-# En la raíz del proyecto
-mysql -u root -p < DB/CreateTables.sql
-```
-
-O manualmente en MySQL:
-
-```sql
-SOURCE /ruta/completa/al/proyecto/DB/CreateTables.sql;
-```
-
-#### Paso 2: Cargar Datos de Ejemplo (Opcional)
-
-```bash
-mysql -u root -p GestionMedicaDB < DB/InsertDatos.sql
-```
-
-O manualmente:
-
-```sql
-USE GestionMedicaDB;
-SOURCE /ruta/completa/al/proyecto/DB/InsertDatos.sql;
-```
-
-> **Nota**: Los datos de ejemplo incluyen 15 registros por tabla (pacientes, citas, medicamentos, etc.).
 
 ---
 
@@ -374,43 +340,9 @@ npm run preview
 npm run lint
 ```
 
----
 
-## 🧪 Testing
-
-### Probar Backend
-
-1. Inicia el backend
-2. Ve a http://localhost:8000/docs
-3. Haz clic en "Authorize"
-4. Usa credenciales de prueba:
-   - Email: `medico@hospital.com`
-   - Password: `medico123`
-5. Prueba los endpoints disponibles
-
-### Probar Frontend
-
-1. Inicia backend y frontend
-2. Ve a http://localhost:5173
-3. Inicia sesión con cualquier usuario de prueba
-4. Navega por las diferentes secciones
-
----
 
 ## 🐛 Solución de Problemas
-
-### Error: "Can't connect to MySQL server"
-
-**Solución**: Verifica que MySQL esté corriendo:
-
-```bash
-# Linux
-sudo systemctl status mysql
-sudo systemctl start mysql
-
-# Windows
-# Verifica en Servicios que MySQL esté iniciado
-```
 
 ### Error: "Module not found"
 
@@ -432,47 +364,11 @@ rmdir /s node_modules & del package-lock.json  # Windows
 npm install
 ```
 
-### Error: Puerto en uso
 
-```bash
-# Linux - Matar proceso en puerto 8000
-lsof -ti:8000 | xargs kill -9
-
-# Windows - Matar proceso en puerto 8000
-netstat -ano | findstr :8000
-taskkill /PID <PID> /F
-```
-
-### Base de datos no se crea
-
-Verifica que tengas permisos:
-
-```sql
--- En MySQL
-GRANT ALL PRIVILEGES ON GestionMedicaDB.* TO 'root'@'localhost';
-FLUSH PRIVILEGES;
-```
-
----
-
-## 📞 Soporte
-
-Para reportar problemas o solicitar funcionalidades:
-
-- **Issues**: [GitHub Issues](https://github.com/YormanOna/Grupo04-Proyecto/issues)
-- **Documentación**: Consulta los archivos en `/Backend/USUARIOS_DEFECTO.md`
-
----
-
-## 📝 Licencia
-
-Este proyecto es parte de un trabajo académico.
-
----
 
 ## 👥 Autores
 
 **Grupo 04**
 
----
+
 
