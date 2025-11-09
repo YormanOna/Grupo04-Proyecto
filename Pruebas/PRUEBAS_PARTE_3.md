@@ -1102,7 +1102,7 @@ ws.onclose = () => {
     "cedula": "1750123456"
   },
   "consultorio": "Consultorio 3",
-  "medico": "Dr. Juan Médico"
+  "medico": "Dr. Doctor Principal"
 }
 ```
 
@@ -1196,7 +1196,7 @@ Importar las siguientes variables de entorno:
 ```bash
 curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@hospital.com","password":"Admin123!"}'
+  -d '{"email":"admin@hospital.com","password":"admin123"}'
 ```
 
 **Crear Paciente (con token):**

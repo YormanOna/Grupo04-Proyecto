@@ -91,8 +91,8 @@ Content-Type: application/json
     "apellido": "Ramírez"
   },
   "medico_empleado": {
-    "nombre": "Juan",
-    "apellido": "Médico"
+    "nombre": "Doctor",
+    "apellido": "Principal"
   }
 }
 ```
@@ -400,8 +400,8 @@ Authorization: Bearer {token}
         "frecuencia_cardiaca": 78
       },
       "medico": {
-        "nombre": "Juan",
-        "apellido": "Médico"
+        "nombre": "Doctor",
+        "apellido": "Principal"
       }
     }
   ],
@@ -827,8 +827,8 @@ Authorization: Bearer {token}
       "cedula": "1750123456"
     },
     "medico": {
-      "nombre": "Juan",
-      "apellido": "Médico"
+      "nombre": "Doctor",
+      "apellido": "Principal"
     },
     "farmaceutico": null,
     "total_medicamentos": 1

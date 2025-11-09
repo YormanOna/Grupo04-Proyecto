@@ -16,37 +16,51 @@
 
 ## ⚙️ CONFIGURACIÓN INICIAL
 
+### ⭐ CREDENCIALES CORRECTAS - RESUMEN RÁPIDO
+
+| Rol | Email | Password |
+|-----|-------|----------|
+| **Super Admin** | `superadmin@hospital.com` | `superadmin123` |
+| **Administrador** | `admin@hospital.com` | `admin123` |
+| **Médico** | `medico@hospital.com` | `medico123` |
+| **Enfermera** | `enfermera@hospital.com` | `enfer123` |
+| **Farmacéutico** | `farmacia@hospital.com` | `farma123` |
+
+**⚠️ IMPORTANTE:** Estas son las contraseñas reales del sistema. NO uses variaciones como `Admin123!`, `Medico123!`, etc.
+
+---
+
 ### Usuarios de Prueba Disponibles
 
 ```json
-// Admin General (Super Admin)
+// Super Admin (Admin General)
 {
-  "email": "admin@hospital.com",
-  "password": "Admin123!"
+  "email": "superadmin@hospital.com",
+  "password": "superadmin123"
 }
 
 // Administrador
 {
-  "email": "administrador@hospital.com",
-  "password": "Admin123!"
+  "email": "admin@hospital.com",
+  "password": "admin123"
 }
 
 // Médico
 {
   "email": "medico@hospital.com",
-  "password": "Medico123!"
+  "password": "medico123"
 }
 
 // Enfermera
 {
   "email": "enfermera@hospital.com",
-  "password": "Enfermera123!"
+  "password": "enfer123"
 }
 
 // Farmacéutico
 {
-  "email": "farmaceutico@hospital.com",
-  "password": "Farmaceutico123!"
+  "email": "farmacia@hospital.com",
+  "password": "farma123"
 }
 ```
 
@@ -59,7 +73,7 @@ Content-Type: application/json
 
 {
   "email": "admin@hospital.com",
-  "password": "Admin123!"
+  "password": "admin123"
 }
 ```
 
@@ -92,7 +106,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
   "nombre": "Juan",
   "apellido": "Pérez",
   "email": "juan.perez@hospital.com",
-  "password": "JuanPerez123!",
+  "password": "medico123",
   "cedula": "0987654321",
   "cargo": "Medico",
   "telefono": "0991234567",
@@ -134,21 +148,21 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```json
 {
   "email": "admin@hospital.com",
-  "password": "Admin123!"
+  "password": "admin123"
 }
 ```
 
 **Respuesta Exitosa (200):**
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiY2FyZ28iOiJBZG1pbiBHZW5lcmFsIn0...",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiY2FyZ28iOiJBZG1pbmlzdHJhZG9yIn0...",
   "token_type": "bearer",
   "user": {
-    "id": 1,
+    "id": 2,
     "nombre": "Admin",
-    "apellido": "General",
+    "apellido": "Sistema",
     "email": "admin@hospital.com",
-    "cargo": "Admin General",
+    "cargo": "Administrador",
     "cedula": "1234567890",
     "activo": true
   }
@@ -184,9 +198,9 @@ Content-Type: application/json
 {
   "nombre": "María",
   "apellido": "González",
-  "email": "maria.gonzalez@hospital.com",
-  "password": "MariaG123!",
-  "cedula": "1234567890",
+  "email": "maria.gonzalez.test@hospital.com",
+  "password": "enfer123",
+  "cedula": "1234567899",
   "cargo": "Enfermera",
   "telefono": "0987654321",
   "direccion": "Calle Secundaria 456"
@@ -199,8 +213,8 @@ Content-Type: application/json
   "id": 11,
   "nombre": "María",
   "apellido": "González",
-  "email": "maria.gonzalez@hospital.com",
-  "cedula": "1234567890",
+  "email": "maria.gonzalez.test@hospital.com",
+  "cedula": "1234567899",
   "cargo": "Enfermera",
   "telefono": "0987654321",
   "direccion": "Calle Secundaria 456",
@@ -226,10 +240,10 @@ Authorization: Bearer {token}
 [
   {
     "id": 1,
-    "nombre": "Admin",
-    "apellido": "General",
-    "email": "admin@hospital.com",
-    "cedula": "1234567890",
+    "nombre": "Super",
+    "apellido": "Admin",
+    "email": "superadmin@hospital.com",
+    "cedula": "1111111111",
     "cargo": "Admin General",
     "telefono": "0991234567",
     "activo": true,
@@ -237,10 +251,19 @@ Authorization: Bearer {token}
   },
   {
     "id": 2,
-    "nombre": "Juan",
-    "apellido": "Médico",
+    "nombre": "Admin",
+    "apellido": "Sistema",
+    "email": "admin@hospital.com",
+    "cedula": "1234567890",
+    "cargo": "Administrador",
+    "activo": true
+  },
+  {
+    "id": 3,
+    "nombre": "Doctor",
+    "apellido": "Principal",
     "email": "medico@hospital.com",
-    "cedula": "0987654321",
+    "cedula": "9876543210",
     "cargo": "Medico",
     "activo": true
   }
@@ -265,10 +288,10 @@ Authorization: Bearer {token}
 ```json
 {
   "id": 1,
-  "nombre": "Admin",
-  "apellido": "General",
-  "email": "admin@hospital.com",
-  "cedula": "1234567890",
+  "nombre": "Super",
+  "apellido": "Admin",
+  "email": "superadmin@hospital.com",
+  "cedula": "1111111111",
   "cargo": "Admin General",
   "telefono": "0991234567",
   "direccion": "Av. Principal 123",
@@ -309,8 +332,8 @@ Content-Type: application/json
   "id": 11,
   "nombre": "María Fernanda",
   "apellido": "González López",
-  "email": "maria.gonzalez@hospital.com",
-  "cedula": "1234567890",
+  "email": "maria.gonzalez.test@hospital.com",
+  "cedula": "1234567899",
   "cargo": "Enfermera",
   "telefono": "0999999999",
   "direccion": "Nueva Dirección 789",
@@ -671,8 +694,8 @@ Content-Type: application/json
   "activo": true,
   "empleado": {
     "id": 3,
-    "nombre": "Juan",
-    "apellido": "Médico",
+    "nombre": "Doctor",
+    "apellido": "Principal",
     "email": "medico@hospital.com",
     "cargo": "Medico"
   }
@@ -697,8 +720,8 @@ Content-Type: application/json
     "years_experiencia": 10,
     "activo": true,
     "empleado": {
-      "nombre": "Juan",
-      "apellido": "Médico",
+      "nombre": "Doctor",
+      "apellido": "Principal",
       "email": "medico@hospital.com"
     }
   }
@@ -979,7 +1002,7 @@ Authorization: Bearer {token}
 [
   {
     "medico_id": 1,
-    "nombre": "Juan Médico",
+    "nombre": "Doctor Principal",
     "especialidad": "Cardiología",
     "citas_del_dia": 3,
     "disponible": true,
@@ -1013,7 +1036,7 @@ Content-Type: image/png
   "cedula": "1750123456",
   "fecha": "15/11/2025",
   "hora": "10:00",
-  "medico": "Juan Médico",
+  "medico": "Doctor Principal",
   "especialidad": "Cardiología",
   "motivo": "Control de presión arterial",
   "estado": "pendiente",
