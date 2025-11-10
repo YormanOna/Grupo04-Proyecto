@@ -105,9 +105,14 @@ def list_pacientes(db: Session, medico_id: int = None):
         from app.models.cita import Cita
         pacientes_ids = db.query(Cita.paciente_id).filter(Cita.medico_id == medico_id).distinct().all()
         pacientes_ids = [pid[0] for pid in pacientes_ids]
-        pacientes = db.query(Paciente).filter(Paciente.id.in_(pacientes_ids)).all()
+        # Filtrar solo pacientes activos (no eliminados)
+        pacientes = db.query(Paciente).filter(
+            Paciente.id.in_(pacientes_ids),
+            Paciente.activo == True
+        ).all()
     else:
-        pacientes = db.query(Paciente).all()
+        # Filtrar solo pacientes activos (no eliminados)
+        pacientes = db.query(Paciente).filter(Paciente.activo == True).all()
     
     # Agregar estado de póliza a cada paciente
     for paciente in pacientes:
@@ -190,9 +195,11 @@ def update_paciente(db: Session, paciente_id: int, payload: PacienteUpdate):
     return paciente
 
 def delete_paciente(db: Session, paciente_id: int):
+    """Borrado lógico de paciente"""
     p = get_paciente(db, paciente_id)
     if not p:
         return None
-    db.delete(p)
+    # Borrado lógico en lugar de físico
+    p.soft_delete()
     db.commit()
     return True

@@ -4,15 +4,18 @@ from app.models.empleado import Empleado
 from app.schemas.medico_schema import MedicoCreate, MedicoUpdate
 
 def list_medicos(db: Session):
-    """Listar todos los médicos del sistema"""
-    return db.query(Medico).all()
+    """Listar todos los médicos activos del sistema"""
+    return db.query(Medico).filter(Medico.activo == True).all()
 
 def get_medico(db: Session, medico_id: int):
-    """Obtener un médico por ID"""
-    return db.query(Medico).filter(Medico.id == medico_id).first()
+    """Obtener un médico activo por ID"""
+    return db.query(Medico).filter(
+        Medico.id == medico_id,
+        Medico.activo == True
+    ).first()
 
 def get_medico_by_cedula(db: Session, cedula: int):
-    """Obtener un médico por cédula"""
+    """Obtener un médico activo por cédula"""
     return db.query(Medico).filter(Medico.cedula == cedula).first()
 
 def create_medico(db: Session, medico_data: MedicoCreate):
@@ -44,15 +47,19 @@ def update_medico(db: Session, medico_id: int, medico_data: MedicoUpdate):
     return medico
 
 def delete_medico(db: Session, medico_id: int):
-    """Eliminar un médico"""
+    """Borrado lógico de médico"""
     medico = get_medico(db, medico_id)
     if not medico:
         return False
     
-    db.delete(medico)
+    # Borrado lógico en lugar de físico
+    medico.soft_delete()
     db.commit()
     return True
 
 def list_medicos_empleados(db: Session):
-    """Listar empleados que son médicos (basado en cargo)"""
-    return db.query(Empleado).filter(Empleado.cargo.ilike("%medico%")).all()
+    """Listar empleados activos que son médicos (basado en cargo)"""
+    return db.query(Empleado).filter(
+        Empleado.cargo.ilike("%medico%"),
+        Empleado.activo == True
+    ).all()

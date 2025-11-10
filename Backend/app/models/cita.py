@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Time
 from sqlalchemy.orm import relationship
 from datetime import datetime, time
-from app.core.database import Base
+from app.core.database import Base, SoftDeleteMixin
 
-class Cita(Base):
+class Cita(Base, SoftDeleteMixin):
     __tablename__ = "citas"
 
     id = Column(Integer, primary_key=True, index=True)

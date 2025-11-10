@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.core.database import Base, SoftDeleteMixin
 
-class Medicamento(Base):
+class Medicamento(Base, SoftDeleteMixin):
     """
     RF-004: Modelo extendido de Medicamento con catálogo completo
     """

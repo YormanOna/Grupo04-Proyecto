@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.core.database import Base
+from app.core.database import Base, SoftDeleteMixin
 
-class Auditoria(Base):
+class Auditoria(Base, SoftDeleteMixin):
     __tablename__ = "auditoria"
 
     id = Column(Integer, primary_key=True, index=True)

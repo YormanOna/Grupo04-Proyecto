@@ -1,8 +1,17 @@
-from sqlalchemy import Column, Integer, String, BigInteger
+from sqlalchemy import Column, Integer, String, BigInteger, Enum as SQLEnum
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.core.database import Base, SoftDeleteMixin
+import enum
 
-class Empleado(Base):
+class EstadoEmpleado(enum.Enum):
+    """Estados posibles para un empleado"""
+    ACTIVO = "Activo"
+    INACTIVO = "Inactivo"
+    SUSPENDIDO = "Suspendido"
+    VACACIONES = "Vacaciones"
+    LICENCIA_MEDICA = "Licencia Médica"
+
+class Empleado(Base, SoftDeleteMixin):
     """
     Modelo base para empleados del sistema médico.
     Tipos de cargo: 'Admin General', 'Administrador', 'Médico', 'Enfermera', 'Farmacéutico'
@@ -23,6 +32,9 @@ class Empleado(Base):
     email = Column(String(150), unique=True, nullable=True)
     telefono = Column(String(20), nullable=True)
     hashed_password = Column(String(255), nullable=True)
+    
+    # Estado del empleado (diferente del borrado lógico)
+    estado = Column(SQLEnum(EstadoEmpleado), default=EstadoEmpleado.ACTIVO, nullable=False, index=True)
 
     # Relaciones
     # Consultas donde el empleado actúa como médico
@@ -42,3 +54,10 @@ class Empleado(Base):
     
     # Auditorías realizadas por el empleado
     auditorias = relationship("Auditoria", back_populates="usuario", foreign_keys="Auditoria.usuario_id")
+    
+    # Signos vitales registrados (cuando es enfermera)
+    signos_vitales_registrados = relationship("SignosVitales", back_populates="enfermera", foreign_keys="SignosVitales.enfermera_id")
+    
+    # Relaciones con tablas que referencian a empleado
+    farmacias_a_cargo = relationship("Farmacia", back_populates="farmaceutico", foreign_keys="Farmacia.farmaceutico_id")
+    perfil_medico = relationship("Medico", back_populates="empleado", foreign_keys="Medico.empleado_id", uselist=False)

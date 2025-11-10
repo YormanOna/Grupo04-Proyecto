@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.core.database import Base
+from app.core.database import Base, SoftDeleteMixin
 
-class Consulta(Base):
+class Consulta(Base, SoftDeleteMixin):
     __tablename__ = "consultas"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -38,3 +38,5 @@ class Consulta(Base):
     historia = relationship("Historia", back_populates="consultas")
     paciente = relationship("Paciente", back_populates="consultas")
     recetas = relationship("Receta", back_populates="consulta", foreign_keys="Receta.consulta_id")
+    signos_vitales_registro = relationship("SignosVitales", back_populates="consulta", cascade="all, delete-orphan")
+    diagnosticos_cie10 = relationship("ConsultaDiagnostico", back_populates="consulta", cascade="all, delete-orphan")

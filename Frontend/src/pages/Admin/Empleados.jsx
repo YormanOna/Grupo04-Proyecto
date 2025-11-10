@@ -17,7 +17,9 @@ const Empleados = () => {
     password: '',
     cedula: '',
     telefono: '',
-    cargo: ''
+    cargo: '',
+    activo: true,  // Campo para borrado lógico
+    estado: 'Activo'  // Campo para estado de acceso
   });
   const [errores, setErrores] = useState({});
 
@@ -27,6 +29,14 @@ const Empleados = () => {
     'Medico',
     'Enfermera',
     'Farmaceutico'
+  ];
+
+  const estadosEmpleado = [
+    'Activo',
+    'Inactivo',
+    'Suspendido',
+    'Vacaciones',
+    'Licencia Médica'
   ];
 
   useEffect(() => {
@@ -63,7 +73,9 @@ const Empleados = () => {
       password: '',
       cedula: '',
       telefono: '',
-      cargo: ''
+      cargo: '',
+      activo: true,  // Por defecto, los nuevos empleados no están eliminados
+      estado: 'Activo'  // Por defecto, pueden acceder al sistema
     });
     setErrores({});
     setMostrarPassword(false);
@@ -79,7 +91,9 @@ const Empleados = () => {
       password: '', // No mostrar password existente
       cedula: empleado.cedula,
       telefono: empleado.telefono || '',
-      cargo: empleado.cargo
+      cargo: empleado.cargo,
+      activo: empleado.activo ?? true,  // Mantener el estado de borrado lógico
+      estado: empleado.estado || 'Activo'  // Mantener el estado de acceso
     });
     setErrores({});
     setMostrarPassword(false);
@@ -267,6 +281,9 @@ const Empleados = () => {
                   Cargo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
@@ -322,6 +339,22 @@ const Empleados = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getCargoColor(empleado.cargo)}`}>
                         {empleado.cargo}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${
+                        empleado.estado === 'Activo' ? 'bg-green-100 text-green-800 border-green-200' :
+                        empleado.estado === 'Vacaciones' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                        empleado.estado === 'Licencia Médica' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                        empleado.estado === 'Suspendido' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                        'bg-red-100 text-red-800 border-red-200'
+                      }`}>
+                        {empleado.estado === 'Activo' && '✓ Activo'}
+                        {empleado.estado === 'Inactivo' && '✗ Inactivo'}
+                        {empleado.estado === 'Suspendido' && '⚠ Suspendido'}
+                        {empleado.estado === 'Vacaciones' && '🏖️ Vacaciones'}
+                        {empleado.estado === 'Licencia Médica' && '🏥 Licencia'}
+                        {!empleado.estado && '✓ Activo'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -583,6 +616,43 @@ const Empleados = () => {
                         </ul>
                       </div>
                     )}
+                  </div>
+
+                  {/* Estado del Empleado */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Estado de Acceso *
+                    </label>
+                    <select
+                      value={formulario.estado}
+                      onChange={(e) => setFormulario({ ...formulario, estado: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 focus:border-blue-500 rounded-xl focus:ring-4 focus:ring-blue-100 transition-all bg-white"
+                    >
+                      {estadosEmpleado.map(estado => (
+                        <option key={estado} value={estado}>{estado}</option>
+                      ))}
+                    </select>
+                    
+                    {/* Información sobre el estado seleccionado */}
+                    <div className={`mt-3 p-4 border-2 rounded-xl ${
+                      formulario.estado === 'Activo' ? 'bg-green-50 border-green-200' :
+                      formulario.estado === 'Vacaciones' ? 'bg-blue-50 border-blue-200' :
+                      formulario.estado === 'Licencia Médica' ? 'bg-yellow-50 border-yellow-200' :
+                      'bg-red-50 border-red-200'
+                    }`}>
+                      <p className={`text-xs font-medium ${
+                        formulario.estado === 'Activo' ? 'text-green-800' :
+                        formulario.estado === 'Vacaciones' ? 'text-blue-800' :
+                        formulario.estado === 'Licencia Médica' ? 'text-yellow-800' :
+                        'text-red-800'
+                      }`}>
+                        {formulario.estado === 'Activo' && '✓ El empleado podrá acceder al sistema normalmente'}
+                        {formulario.estado === 'Inactivo' && '✗ El empleado NO podrá iniciar sesión'}
+                        {formulario.estado === 'Suspendido' && '⚠ El empleado está suspendido y NO puede acceder'}
+                        {formulario.estado === 'Vacaciones' && '🏖️ El empleado está de vacaciones pero puede acceder si es necesario'}
+                        {formulario.estado === 'Licencia Médica' && '🏥 El empleado está en licencia médica'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

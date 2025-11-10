@@ -129,13 +129,14 @@ class LoteService:
     
     @staticmethod
     def eliminar_lote(db: Session, lote_id: int) -> bool:
-        """Eliminar un lote"""
+        """Borrado lógico de lote"""
         lote = db.query(Lote).filter(Lote.id == lote_id).first()
         if not lote:
             return False
         
         medicamento_id = lote.medicamento_id
-        db.delete(lote)
+        # Borrado lógico en lugar de físico
+        lote.soft_delete()
         db.commit()
         
         # Actualizar stock del medicamento

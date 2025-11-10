@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.core.database import Base
+from app.core.database import Base, SoftDeleteMixin
 
-class Receta(Base):
+class Receta(Base, SoftDeleteMixin):
     """
     Modelo para prescripciones médicas (recetas)
     Permite gestionar medicamentos prescritos por el médico
@@ -31,7 +31,7 @@ class Receta(Base):
     medico = relationship("Empleado", back_populates="recetas_emitidas", foreign_keys=[medico_id])
     paciente = relationship("Paciente", back_populates="recetas", foreign_keys=[paciente_id])
     farmaceutico = relationship("Empleado", back_populates="recetas_dispensadas", foreign_keys=[dispensada_por])
-    lote_obj = relationship("Lote", foreign_keys=[lote_id])
+    lote_obj = relationship("Lote", back_populates="recetas", foreign_keys=[lote_id])
 
     def __repr__(self):
         return f"<Receta {self.id} - Paciente: {self.paciente_id}>"

@@ -72,13 +72,17 @@ def create_default_users(db: Session):
             # Asegurar que la contraseña sea un string y no exceda 72 bytes
             password = str(user_data["password"])[:50]  # Limitar a 50 caracteres por seguridad
             
+            from app.models.empleado import EstadoEmpleado
+            
             new_employee = Empleado(
                 nombre=user_data["nombre"],
                 apellido=user_data["apellido"],
                 cedula=user_data["cedula"],
                 cargo=user_data["cargo"],
                 email=user_data["email"],
-                hashed_password=get_password_hash(password)
+                hashed_password=get_password_hash(password),
+                activo=True,  # Usuario no eliminado
+                estado=EstadoEmpleado.ACTIVO  # Estado activo para login
             )
             db.add(new_employee)
             db.flush()  # Para obtener el ID
@@ -93,6 +97,7 @@ def create_default_users(db: Session):
                     new_medico = Medico(
                         nombre=user_data["nombre"],
                         apellido=user_data["apellido"],
+                        activo=True,  # Médico activo por defecto
                         cedula=user_data["cedula"],
                         especialidad="Medicina General",
                         email=user_data["email"],

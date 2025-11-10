@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Date, Numeric
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.core.database import Base
+from app.core.database import Base, SoftDeleteMixin
 
-class Lote(Base):
+class Lote(Base, SoftDeleteMixin):
     """
     RF-004: Modelo para gestión de lotes de medicamentos
     Permite trazabilidad completa, control de vencimientos y ubicación física
@@ -30,6 +30,7 @@ class Lote(Base):
 
     # Relaciones
     medicamento = relationship("Medicamento", back_populates="lotes")
+    recetas = relationship("Receta", back_populates="lote_obj", foreign_keys="Receta.lote_id")
 
     def __repr__(self):
         return f"<Lote {self.numero_lote} - {self.medicamento_id}>"

@@ -14,58 +14,62 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- NOTA: Los IDs 1-5 están reservados para usuarios por defecto de init_data.py
 -- Estos empleados empiezan desde ID 6
 -- Contraseñas por rol: medico123, farma123, enfer123, admin123, superadmin123
+-- IMPORTANTE: Todos los empleados se crean con activo=1 (TRUE) y estado='Activo'
+-- Estados posibles: 'Activo', 'Inactivo', 'Suspendido', 'Vacaciones', 'Licencia Médica'
 -- ============================================================
-INSERT INTO empleados (id, nombre, apellido, cedula, cargo, email, telefono, hashed_password) VALUES
-(6, 'Carlos', 'Méndez', 1104567890, 'Medico', 'carlos.mendez@hospital.com', '0987654321', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
-(7, 'María', 'González', 1104567891, 'Medico', 'maria.gonzalez@hospital.com', '0987654322', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
-(8, 'Juan', 'Rodríguez', 1104567892, 'Medico', 'juan.rodriguez@hospital.com', '0987654323', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
-(9, 'Ana', 'Pérez', 1104567893, 'Medico', 'ana.perez@hospital.com', '0987654324', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
-(10, 'Luis', 'Torres', 1104567894, 'Medico', 'luis.torres@hospital.com', '0987654325', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
-(11, 'Carmen', 'Sánchez', 1104567895, 'Farmaceutico', 'carmen.sanchez@hospital.com', '0987654326', '$2b$12$l0Tghebvd/2ZKvCsZsdCtOw4.NtInm9t9Njnu90oLP.xlxPViOcCG'),
-(12, 'Pedro', 'Ramírez', 1104567896, 'Farmaceutico', 'pedro.ramirez@hospital.com', '0987654327', '$2b$12$l0Tghebvd/2ZKvCsZsdCtOw4.NtInm9t9Njnu90oLP.xlxPViOcCG'),
-(13, 'Sofia', 'Jiménez', 1104567897, 'Enfermera', 'sofia.jimenez@hospital.com', '0987654328', '$2b$12$G3zveM.9aCCPFFpgemNpC.3PxN7p5mhFfpnydsZFuYyNRjL4Ygi6W'),
-(14, 'Miguel', 'Castro', 1104567898, 'Enfermera', 'miguel.castro@hospital.com', '0987654329', '$2b$12$G3zveM.9aCCPFFpgemNpC.3PxN7p5mhFfpnydsZFuYyNRjL4Ygi6W'),
-(15, 'Laura', 'Morales', 1104567899, 'Administrador', 'laura.morales@hospital.com', '0987654330', '$2b$12$mEykh6delmWCmseup4JQWe7RP95Tr3Vjiq7tt9ufOY977mrwUASkG'),
-(16, 'Diego', 'Vargas', 1104567900, 'Administrador', 'diego.vargas@hospital.com', '0987654331', '$2b$12$mEykh6delmWCmseup4JQWe7RP95Tr3Vjiq7tt9ufOY977mrwUASkG'),
-(17, 'Patricia', 'Herrera', 1104567901, 'Admin General', 'patricia.herrera@hospital.com', '0987654332', '$2b$12$w0Rhwcw7Nmd90ru9Ur4UO.CQp1TtdGDs5oYa9SMdnCJzT65LlSCfm'),
-(18, 'Roberto', 'Díaz', 1104567902, 'Medico', 'roberto.diaz@hospital.com', '0987654333', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
-(19, 'Valeria', 'Ruiz', 1104567903, 'Medico', 'valeria.ruiz@hospital.com', '0987654334', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK'),
-(20, 'Fernando', 'Ortiz', 1104567904, 'Medico', 'fernando.ortiz@hospital.com', '0987654335', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK');
+INSERT INTO empleados (id, nombre, apellido, cedula, cargo, email, telefono, hashed_password, activo, estado) VALUES
+(6, 'Carlos', 'Méndez', 1104567890, 'Medico', 'carlos.mendez@hospital.com', '0987654321', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK', 1, 'Activo'),
+(7, 'María', 'González', 1104567891, 'Medico', 'maria.gonzalez@hospital.com', '0987654322', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK', 1, 'Activo'),
+(8, 'Juan', 'Rodríguez', 1104567892, 'Medico', 'juan.rodriguez@hospital.com', '0987654323', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK', 1, 'Activo'),
+(9, 'Ana', 'Pérez', 1104567893, 'Medico', 'ana.perez@hospital.com', '0987654324', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK', 1, 'Activo'),
+(10, 'Luis', 'Torres', 1104567894, 'Medico', 'luis.torres@hospital.com', '0987654325', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK', 1, 'Activo'),
+(11, 'Carmen', 'Sánchez', 1104567895, 'Farmaceutico', 'carmen.sanchez@hospital.com', '0987654326', '$2b$12$l0Tghebvd/2ZKvCsZsdCtOw4.NtInm9t9Njnu90oLP.xlxPViOcCG', 1, 'Activo'),
+(12, 'Pedro', 'Ramírez', 1104567896, 'Farmaceutico', 'pedro.ramirez@hospital.com', '0987654327', '$2b$12$l0Tghebvd/2ZKvCsZsdCtOw4.NtInm9t9Njnu90oLP.xlxPViOcCG', 1, 'Activo'),
+(13, 'Sofia', 'Jiménez', 1104567897, 'Enfermera', 'sofia.jimenez@hospital.com', '0987654328', '$2b$12$G3zveM.9aCCPFFpgemNpC.3PxN7p5mhFfpnydsZFuYyNRjL4Ygi6W', 1, 'Activo'),
+(14, 'Miguel', 'Castro', 1104567898, 'Enfermera', 'miguel.castro@hospital.com', '0987654329', '$2b$12$G3zveM.9aCCPFFpgemNpC.3PxN7p5mhFfpnydsZFuYyNRjL4Ygi6W', 1, 'Activo'),
+(15, 'Laura', 'Morales', 1104567899, 'Administrador', 'laura.morales@hospital.com', '0987654330', '$2b$12$mEykh6delmWCmseup4JQWe7RP95Tr3Vjiq7tt9ufOY977mrwUASkG', 1, 'Activo'),
+(16, 'Diego', 'Vargas', 1104567900, 'Administrador', 'diego.vargas@hospital.com', '0987654331', '$2b$12$mEykh6delmWCmseup4JQWe7RP95Tr3Vjiq7tt9ufOY977mrwUASkG', 1, 'Activo'),
+(17, 'Patricia', 'Herrera', 1104567901, 'Admin General', 'patricia.herrera@hospital.com', '0987654332', '$2b$12$w0Rhwcw7Nmd90ru9Ur4UO.CQp1TtdGDs5oYa9SMdnCJzT65LlSCfm', 1, 'Activo'),
+(18, 'Roberto', 'Díaz', 1104567902, 'Medico', 'roberto.diaz@hospital.com', '0987654333', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK', 1, 'Activo'),
+(19, 'Valeria', 'Ruiz', 1104567903, 'Medico', 'valeria.ruiz@hospital.com', '0987654334', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK', 1, 'Activo'),
+(20, 'Fernando', 'Ortiz', 1104567904, 'Medico', 'fernando.ortiz@hospital.com', '0987654335', '$2b$12$hb1aqR72wQdly.7D9jb0WONsxVR0NWArvGe27XwixzhAKmTEPiMNK', 1, 'Activo');
 
 -- ============================================================
 -- 2. MÉDICOS (Extensión de empleados)
 -- NOTA: empleado_id 3 es el médico por defecto (medico@hospital.com)
 -- Los médicos de ejemplo referencian empleados ID 6-10 y 18-20
+-- IMPORTANTE: Todos los médicos se crean con activo=1 (TRUE)
 -- ============================================================
-INSERT INTO medicos (nombre, apellido, cedula, especialidad, email, empleado_id) VALUES
-('Carlos', 'Méndez', 1104567890, 'Cardiología', 'carlos.mendez@hospital.com', 6),
-('María', 'González', 1104567891, 'Pediatría', 'maria.gonzalez@hospital.com', 7),
-('Juan', 'Rodríguez', 1104567892, 'Medicina General', 'juan.rodriguez@hospital.com', 8),
-('Ana', 'Pérez', 1104567893, 'Ginecología', 'ana.perez@hospital.com', 9),
-('Luis', 'Torres', 1104567894, 'Traumatología', 'luis.torres@hospital.com', 10),
-('Roberto', 'Díaz', 1104567902, 'Dermatología', 'roberto.diaz@hospital.com', 18),
-('Valeria', 'Ruiz', 1104567903, 'Oftalmología', 'valeria.ruiz@hospital.com', 19),
-('Fernando', 'Ortiz', 1104567904, 'Neurología', 'fernando.ortiz@hospital.com', 20);
+INSERT INTO medicos (nombre, apellido, cedula, especialidad, email, empleado_id, activo) VALUES
+('Carlos', 'Méndez', 1104567890, 'Cardiología', 'carlos.mendez@hospital.com', 6, 1),
+('María', 'González', 1104567891, 'Pediatría', 'maria.gonzalez@hospital.com', 7, 1),
+('Juan', 'Rodríguez', 1104567892, 'Medicina General', 'juan.rodriguez@hospital.com', 8, 1),
+('Ana', 'Pérez', 1104567893, 'Ginecología', 'ana.perez@hospital.com', 9, 1),
+('Luis', 'Torres', 1104567894, 'Traumatología', 'luis.torres@hospital.com', 10, 1),
+('Roberto', 'Díaz', 1104567902, 'Dermatología', 'roberto.diaz@hospital.com', 18, 1),
+('Valeria', 'Ruiz', 1104567903, 'Oftalmología', 'valeria.ruiz@hospital.com', 19, 1),
+('Fernando', 'Ortiz', 1104567904, 'Neurología', 'fernando.ortiz@hospital.com', 20, 1);
 
 -- ============================================================
 -- 3. PACIENTES
+-- IMPORTANTE: Todos los pacientes se crean con activo=1 (TRUE)
 -- ============================================================
-INSERT INTO pacientes (nombre, apellido, cedula, email, telefono, direccion, fecha_nacimiento, genero, grupo_sanguineo, contacto_emergencia_nombre, contacto_emergencia_telefono) VALUES
-('Andrea', 'López', 1105678901, 'andrea.lopez@email.com', '0998765431', 'Calle Lourdes 234', '1995-04-12', 'Femenino', 'O+', 'María López', '0998765432'),
-('Ricardo', 'Martínez', 1105678902, 'ricardo.martinez@email.com', '0998765433', 'Av. Nueva Loja 567', '1980-08-23', 'Masculino', 'A+', 'Lucía Martínez', '0998765434'),
-('Gabriela', 'Fernández', 1105678903, 'gabriela.fernandez@email.com', '0998765435', 'Calle Olmedo 890', '1992-11-30', 'Femenino', 'B+', 'Pedro Fernández', '0998765436'),
-('Jorge', 'Silva', 1105678904, 'jorge.silva@email.com', '0998765437', 'Av. Salvador Bustamante', '1975-02-14', 'Masculino', 'AB+', 'Rosa Silva', '0998765438'),
-('Daniela', 'Mora', 1105678905, 'daniela.mora@email.com', '0998765439', 'Calle Azuay 123', '1998-06-18', 'Femenino', 'O-', 'Carlos Mora', '0998765440'),
-('Andrés', 'Vega', 1105678906, 'andres.vega@email.com', '0998765441', 'Av. Isidro Ayora', '1988-09-07', 'Masculino', 'A-', 'Marta Vega', '0998765442'),
-('Isabella', 'Romero', 1105678907, 'isabella.romero@email.com', '0998765443', 'Calle Imbabura 456', '2005-12-25', 'Femenino', 'B-', 'Sandra Romero', '0998765444'),
-('Sebastián', 'Guerrero', 1105678908, 'sebastian.guerrero@email.com', '0998765445', 'Av. Eduardo Kingman', '1983-03-15', 'Masculino', 'O+', 'Paola Guerrero', '0998765446'),
-('Camila', 'Paredes', 1105678909, 'camila.paredes@email.com', '0998765447', 'Calle José Félix', '1996-07-22', 'Femenino', 'A+', 'Luis Paredes', '0998765448'),
-('Mateo', 'Cruz', 1105678910, 'mateo.cruz@email.com', '0998765449', 'Av. Emiliano Ortega', '2010-01-10', 'Masculino', 'AB-', 'Elena Cruz', '0998765450'),
-('Valentina', 'Mendoza', 1105678911, 'valentina.mendoza@email.com', '0998765451', 'Calle Quito 789', '1990-05-05', 'Femenino', 'O+', 'Javier Mendoza', '0998765452'),
-('Nicolás', 'Reyes', 1105678912, 'nicolas.reyes@email.com', '0998765453', 'Av. 8 de Diciembre', '1978-10-18', 'Masculino', 'B+', 'Carmen Reyes', '0998765454'),
-('Sofía', 'Aguilar', 1105678913, 'sofia.aguilar@email.com', '0998765455', 'Calle Gonzanamá 321', '2000-08-29', 'Femenino', 'A-', 'Roberto Aguilar', '0998765456'),
-('Lucas', 'Benítez', 1105678914, 'lucas.benitez@email.com', '0998765457', 'Av. Universitaria 654', '1985-12-12', 'Masculino', 'O-', 'Ana Benítez', '0998765458'),
-('Emma', 'Castro', 1105678915, 'emma.castro@email.com', '0998765459', 'Calle Bernardo Valdivieso', '1993-04-03', 'Femenino', 'AB+', 'Miguel Castro', '0998765460');
+INSERT INTO pacientes (nombre, apellido, cedula, email, telefono, direccion, fecha_nacimiento, genero, grupo_sanguineo, contacto_emergencia_nombre, contacto_emergencia_telefono, activo) VALUES
+('Andrea', 'López', 1105678901, 'andrea.lopez@email.com', '0998765431', 'Calle Lourdes 234', '1995-04-12', 'Femenino', 'O+', 'María López', '0998765432', 1),
+('Ricardo', 'Martínez', 1105678902, 'ricardo.martinez@email.com', '0998765433', 'Av. Nueva Loja 567', '1980-08-23', 'Masculino', 'A+', 'Lucía Martínez', '0998765434', 1),
+('Gabriela', 'Fernández', 1105678903, 'gabriela.fernandez@email.com', '0998765435', 'Calle Olmedo 890', '1992-11-30', 'Femenino', 'B+', 'Pedro Fernández', '0998765436', 1),
+('Jorge', 'Silva', 1105678904, 'jorge.silva@email.com', '0998765437', 'Av. Salvador Bustamante', '1975-02-14', 'Masculino', 'AB+', 'Rosa Silva', '0998765438', 1),
+('Daniela', 'Mora', 1105678905, 'daniela.mora@email.com', '0998765439', 'Calle Azuay 123', '1998-06-18', 'Femenino', 'O-', 'Carlos Mora', '0998765440', 1),
+('Andrés', 'Vega', 1105678906, 'andres.vega@email.com', '0998765441', 'Av. Isidro Ayora', '1988-09-07', 'Masculino', 'A-', 'Marta Vega', '0998765442', 1),
+('Isabella', 'Romero', 1105678907, 'isabella.romero@email.com', '0998765443', 'Calle Imbabura 456', '2005-12-25', 'Femenino', 'B-', 'Sandra Romero', '0998765444', 1),
+('Sebastián', 'Guerrero', 1105678908, 'sebastian.guerrero@email.com', '0998765445', 'Av. Eduardo Kingman', '1983-03-15', 'Masculino', 'O+', 'Paola Guerrero', '0998765446', 1),
+('Camila', 'Paredes', 1105678909, 'camila.paredes@email.com', '0998765447', 'Calle José Félix', '1996-07-22', 'Femenino', 'A+', 'Luis Paredes', '0998765448', 1),
+('Mateo', 'Cruz', 1105678910, 'mateo.cruz@email.com', '0998765449', 'Av. Emiliano Ortega', '2010-01-10', 'Masculino', 'AB-', 'Elena Cruz', '0998765450', 1),
+('Valentina', 'Mendoza', 1105678911, 'valentina.mendoza@email.com', '0998765451', 'Calle Quito 789', '1990-05-05', 'Femenino', 'O+', 'Javier Mendoza', '0998765452', 1),
+('Nicolás', 'Reyes', 1105678912, 'nicolas.reyes@email.com', '0998765453', 'Av. 8 de Diciembre', '1978-10-18', 'Masculino', 'B+', 'Carmen Reyes', '0998765454', 1),
+('Sofía', 'Aguilar', 1105678913, 'sofia.aguilar@email.com', '0998765455', 'Calle Gonzanamá 321', '2000-08-29', 'Femenino', 'A-', 'Roberto Aguilar', '0998765456', 1),
+('Lucas', 'Benítez', 1105678914, 'lucas.benitez@email.com', '0998765457', 'Av. Universitaria 654', '1985-12-12', 'Masculino', 'O-', 'Ana Benítez', '0998765458', 1),
+('Emma', 'Castro', 1105678915, 'emma.castro@email.com', '0998765459', 'Calle Bernardo Valdivieso', '1993-04-03', 'Femenino', 'AB+', 'Miguel Castro', '0998765460', 1);
 
 -- ============================================================
 -- 4. HISTORIAS CLÍNICAS

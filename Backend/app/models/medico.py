@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, BigInteger, ForeignKey
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.core.database import Base, SoftDeleteMixin
 
-class Medico(Base):
+class Medico(Base, SoftDeleteMixin):
     """
     Modelo para Médico que hereda de Empleado.
     Según el diagrama, Médico es una especialización de Empleado.
@@ -20,7 +20,7 @@ class Medico(Base):
     empleado_id = Column(Integer, ForeignKey("empleados.id"), nullable=True)
     
     # Relación con Empleado (bidireccional)
-    empleado = relationship("Empleado", foreign_keys=[empleado_id])
+    empleado = relationship("Empleado", back_populates="perfil_medico", foreign_keys=[empleado_id])
     
     # Relación con Citas (1 Médico -> N Citas)
     citas = relationship("Cita", back_populates="medico", cascade="all, delete-orphan")

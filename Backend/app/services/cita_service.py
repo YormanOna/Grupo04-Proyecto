@@ -306,10 +306,12 @@ def update_cita(db: Session, cita_id: int, payload: CitaUpdate):
     return cita_actualizada
 
 def delete_cita(db: Session, cita_id: int):
+    """Borrado lógico de cita"""
     cita = get_cita(db, cita_id)
     if not cita:
         return None
-    db.delete(cita)
+    # Borrado lógico en lugar de físico
+    cita.soft_delete()
     db.commit()
     return True
 

@@ -2,9 +2,9 @@ from sqlalchemy import Column, Integer, String, BigInteger, ForeignKey, Date, Te
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 from datetime import datetime, date
-from app.core.database import Base
+from app.core.database import Base, SoftDeleteMixin
 
-class Paciente(Base):
+class Paciente(Base, SoftDeleteMixin):
     __tablename__ = "pacientes"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -56,3 +56,6 @@ class Paciente(Base):
     
     # Relación 1:N con Recetas
     recetas = relationship("Receta", back_populates="paciente", foreign_keys="Receta.paciente_id")
+    
+    # Relación 1:N con Signos Vitales
+    signos_vitales = relationship("SignosVitales", back_populates="paciente", cascade="all, delete-orphan")
