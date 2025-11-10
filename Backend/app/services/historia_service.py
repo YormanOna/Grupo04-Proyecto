@@ -8,17 +8,38 @@ from app.models.empleado import Empleado
 from app.schemas.historia_schema import HistoriaCreate
 
 def create_historia(db: Session, payload: HistoriaCreate):
-    h = Historia(identificador=payload.identificador)
+    h = Historia(identificador=payload.identificador, activo=True)
     db.add(h)
     db.commit()
     db.refresh(h)
     return h
 
 def list_historias(db: Session):
-    return db.query(Historia).all()
+    # Incluir historias activas y NULL (migración automática)
+    historias = db.query(Historia).filter(
+        or_(Historia.activo == True, Historia.activo.is_(None))
+    ).all()
+    
+    # Corregir registros con activo=NULL
+    for historia in historias:
+        if historia.activo is None:
+            historia.activo = True
+    
+    if any(h.activo is None for h in historias):
+        db.commit()
+    
+    return historias
 
 def get_historia(db: Session, historia_id: int):
-    return db.query(Historia).filter(Historia.id == historia_id).first()
+    historia = db.query(Historia).filter(Historia.id == historia_id).first()
+    
+    # Corregir activo=NULL si existe
+    if historia and historia.activo is None:
+        historia.activo = True
+        db.commit()
+        db.refresh(historia)
+    
+    return historia
 
 def buscar_expediente_completo(db: Session, termino: str):
     """

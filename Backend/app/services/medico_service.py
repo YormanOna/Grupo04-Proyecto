@@ -5,14 +5,37 @@ from app.schemas.medico_schema import MedicoCreate, MedicoUpdate
 
 def list_medicos(db: Session):
     """Listar todos los médicos activos del sistema"""
-    return db.query(Medico).filter(Medico.activo == True).all()
+    from sqlalchemy import or_
+    # Incluir médicos con activo=True o activo=NULL (migración automática)
+    medicos = db.query(Medico).filter(
+        or_(Medico.activo == True, Medico.activo.is_(None))
+    ).all()
+    
+    # Corregir registros con activo=NULL
+    for medico in medicos:
+        if medico.activo is None:
+            medico.activo = True
+    
+    if any(m.activo is None for m in medicos):
+        db.commit()
+    
+    return medicos
 
 def get_medico(db: Session, medico_id: int):
     """Obtener un médico activo por ID"""
-    return db.query(Medico).filter(
+    from sqlalchemy import or_
+    medico = db.query(Medico).filter(
         Medico.id == medico_id,
-        Medico.activo == True
+        or_(Medico.activo == True, Medico.activo.is_(None))
     ).first()
+    
+    # Corregir activo=NULL si existe
+    if medico and medico.activo is None:
+        medico.activo = True
+        db.commit()
+        db.refresh(medico)
+    
+    return medico
 
 def get_medico_by_cedula(db: Session, cedula: int):
     """Obtener un médico activo por cédula"""
@@ -25,7 +48,9 @@ def create_medico(db: Session, medico_data: MedicoCreate):
     if existing:
         raise ValueError("Ya existe un médico con esa cédula")
     
-    medico = Medico(**medico_data.dict())
+    medico_dict = medico_data.dict()
+    medico_dict['activo'] = True  # Asegurar que se crea como activo
+    medico = Medico(**medico_dict)
     db.add(medico)
     db.commit()
     db.refresh(medico)

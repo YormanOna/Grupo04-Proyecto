@@ -1,0 +1,9 @@
+Manual de usuario
+Medico
+Administrador
+Ingresar sus credenciales
+Foto
+Va a ver el dashobar inicial con las opciones, ademas de un navbar en donde vera las opciones
+Al seleccionar la opcion
+Enfermero/re
+Farmaceutico

@@ -87,7 +87,8 @@ def create_paciente(db: Session, payload: PacienteCreate):
         aseguradora=payload.aseguradora,
         numero_poliza=payload.numero_poliza,
         fecha_vigencia_poliza=payload.fecha_vigencia_poliza,
-        historia_id=historia.id
+        historia_id=historia.id,
+        activo=True  # Asegurar que el paciente está activo (no eliminado)
     )
     
     db.add(p)
@@ -105,14 +106,25 @@ def list_pacientes(db: Session, medico_id: int = None):
         from app.models.cita import Cita
         pacientes_ids = db.query(Cita.paciente_id).filter(Cita.medico_id == medico_id).distinct().all()
         pacientes_ids = [pid[0] for pid in pacientes_ids]
-        # Filtrar solo pacientes activos (no eliminados)
+        # Filtrar solo pacientes activos (no eliminados) - incluye NULL como activo
         pacientes = db.query(Paciente).filter(
             Paciente.id.in_(pacientes_ids),
-            Paciente.activo == True
+            or_(Paciente.activo == True, Paciente.activo.is_(None))
         ).all()
     else:
-        # Filtrar solo pacientes activos (no eliminados)
-        pacientes = db.query(Paciente).filter(Paciente.activo == True).all()
+        # Filtrar solo pacientes activos (no eliminados) - incluye NULL como activo
+        pacientes = db.query(Paciente).filter(
+            or_(Paciente.activo == True, Paciente.activo.is_(None))
+        ).all()
+    
+    # Corregir registros con activo=NULL (migración automática)
+    for paciente in pacientes:
+        if paciente.activo is None:
+            paciente.activo = True
+    
+    # Hacer commit si hubo cambios
+    if any(p.activo is None for p in pacientes):
+        db.commit()
     
     # Agregar estado de póliza a cada paciente
     for paciente in pacientes:
@@ -136,6 +148,12 @@ def get_paciente(db: Session, paciente_id: int):
     paciente = db.query(Paciente).filter(Paciente.id == paciente_id).first()
     
     if paciente:
+        # Corregir activo=NULL si existe (migración automática)
+        if paciente.activo is None:
+            paciente.activo = True
+            db.commit()
+            db.refresh(paciente)
+        
         # Agregar estado de póliza
         if paciente.fecha_vigencia_poliza:
             estado, _ = validar_vigencia_poliza(paciente.fecha_vigencia_poliza)
@@ -159,17 +177,23 @@ def buscar_pacientes(db: Session, termino: str):
         return []
     
     # Buscar por cédula (número exacto o parcial) o nombre/apellido
+    # Incluir pacientes activos o con activo=NULL
     pacientes = db.query(Paciente).filter(
         or_(
             Paciente.cedula.like(f"%{termino}%"),
             Paciente.nombre.ilike(f"%{termino}%"),
             Paciente.apellido.ilike(f"%{termino}%"),
             func.concat(Paciente.nombre, ' ', Paciente.apellido).ilike(f"%{termino}%")
-        )
+        ),
+        or_(Paciente.activo == True, Paciente.activo.is_(None))
     ).limit(20).all()
     
-    # Agregar información adicional
+    # Agregar información adicional y corregir activo=NULL
     for paciente in pacientes:
+        # Corregir activo=NULL (migración automática)
+        if paciente.activo is None:
+            paciente.activo = True
+        
         if paciente.fecha_vigencia_poliza:
             estado, _ = validar_vigencia_poliza(paciente.fecha_vigencia_poliza)
             paciente.estado_poliza = estado
@@ -178,6 +202,10 @@ def buscar_pacientes(db: Session, termino: str):
         
         if paciente.historia:
             paciente.numero_historia_clinica = paciente.historia.identificador
+    
+    # Hacer commit si hubo cambios
+    if any(p.activo is None for p in pacientes):
+        db.commit()
     
     return pacientes
 

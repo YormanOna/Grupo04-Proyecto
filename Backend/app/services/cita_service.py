@@ -68,7 +68,8 @@ def create_cita(db: Session, payload: CitaCreate):
         motivo=payload.motivo,
         estado=payload.estado or "Pendiente",
         sala_asignada=payload.sala_asignada,
-        tipo_cita=payload.tipo_cita
+        tipo_cita=payload.tipo_cita,
+        activo=True  # Asegurar que se crea como activa
     )
     db.add(c)
     db.commit()
@@ -149,6 +150,8 @@ def list_citas(db: Session, medico_id: int = None):
     query = db.query(Cita).options(
         joinedload(Cita.paciente),
         joinedload(Cita.medico).joinedload(Medico.empleado)
+    ).filter(
+        or_(Cita.activo == True, Cita.activo.is_(None))  # Incluir activas y NULL
     )
     
     if medico_id:
@@ -156,8 +159,12 @@ def list_citas(db: Session, medico_id: int = None):
     
     citas = query.all()
     
-    # Agregar información adicional a cada cita
+    # Corregir registros con activo=NULL y agregar información adicional
     for cita in citas:
+        # Corregir activo=NULL (migración automática)
+        if cita.activo is None:
+            cita.activo = True
+        
         if cita.paciente:
             cita.paciente_nombre = cita.paciente.nombre
             cita.paciente_apellido = cita.paciente.apellido
@@ -175,6 +182,10 @@ def list_citas(db: Session, medico_id: int = None):
                 cita.medico_apellido = cita.medico.apellido
             cita.medico_especialidad = cita.medico.especialidad
     
+    # Hacer commit si hubo cambios
+    if any(c.activo is None for c in citas):
+        db.commit()
+    
     return citas
 
 def get_cita(db: Session, cita_id: int):
@@ -184,6 +195,12 @@ def get_cita(db: Session, cita_id: int):
     ).filter(Cita.id == cita_id).first()
     
     if cita:
+        # Corregir activo=NULL si existe (migración automática)
+        if cita.activo is None:
+            cita.activo = True
+            db.commit()
+            db.refresh(cita)
+        
         # Agregar información adicional
         if cita.paciente:
             cita.paciente_nombre = cita.paciente.nombre

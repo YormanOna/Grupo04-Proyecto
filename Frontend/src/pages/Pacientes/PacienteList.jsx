@@ -16,7 +16,8 @@ const PacienteList = () => {
   
   const isAdmin = user?.cargo === 'Administrador' || user?.cargo === 'Admin General'
   const isNurse = user?.cargo === 'Enfermera'
-  const canEdit = !isNurse // Enfermera solo puede VER, no editar
+  const isMedico = user?.cargo === 'Medico'
+  const canEdit = isAdmin // Solo administradores pueden crear/editar/eliminar pacientes
 
   // Función para obtener el color del badge según el estado de póliza (RF-001)
   const getEstadoPolizaColor = (estado) => {
@@ -185,7 +186,7 @@ const PacienteList = () => {
             <span>Nuevo Paciente</span>
           </Link>
         )}
-        {isNurse && (
+        {(isNurse || isMedico) && (
           <div className="bg-blue-50 border-2 border-blue-200 text-blue-700 px-6 py-3 rounded-xl font-semibold flex items-center space-x-2">
             <Eye className="w-5 h-5" />
             <span>Modo Solo Lectura</span>

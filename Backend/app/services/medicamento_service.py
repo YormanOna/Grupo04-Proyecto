@@ -15,7 +15,8 @@ def create_medicamento(db: Session, payload: MedicamentoCreate):
         nombre=payload.nombre, 
         stock=payload.stock, 
         contenido=payload.contenido, 
-        farmacia_id=farmacia_id
+        farmacia_id=farmacia_id,
+        activo=True  # Asegurar que se crea como activo
     )
     db.add(m)
     db.commit()
@@ -23,22 +24,56 @@ def create_medicamento(db: Session, payload: MedicamentoCreate):
     return m
 
 def list_medicamentos(db: Session):
-    return db.query(Medicamento).all()
+    from sqlalchemy import or_
+    # Incluir medicamentos activos y NULL (migración automática)
+    medicamentos = db.query(Medicamento).filter(
+        or_(Medicamento.activo == True, Medicamento.activo.is_(None))
+    ).all()
+    
+    # Corregir registros con activo=NULL
+    for medicamento in medicamentos:
+        if medicamento.activo is None:
+            medicamento.activo = True
+    
+    if any(m.activo is None for m in medicamentos):
+        db.commit()
+    
+    return medicamentos
 
 def get_medicamento(db: Session, med_id: int):
-    return db.query(Medicamento).filter(Medicamento.id == med_id).first()
+    medicamento = db.query(Medicamento).filter(Medicamento.id == med_id).first()
+    
+    # Corregir activo=NULL si existe
+    if medicamento and medicamento.activo is None:
+        medicamento.activo = True
+        db.commit()
+        db.refresh(medicamento)
+    
+    return medicamento
 
 def buscar_medicamentos(db: Session, query: str, limit: int = 20):
     """
     Busca medicamentos por nombre con stock disponible
     RF-003: Autocomplete para prescripción
     """
+    from sqlalchemy import or_
     if not query or len(query) < 2:
         return []
     
     search_pattern = f"%{query}%"
     
-    return db.query(Medicamento).filter(
+    medicamentos = db.query(Medicamento).filter(
         Medicamento.nombre.ilike(search_pattern),
-        Medicamento.stock > 0  # Solo medicamentos disponibles
+        Medicamento.stock > 0,  # Solo medicamentos disponibles
+        or_(Medicamento.activo == True, Medicamento.activo.is_(None))  # Activos o NULL
     ).limit(limit).all()
+    
+    # Corregir registros con activo=NULL
+    for medicamento in medicamentos:
+        if medicamento.activo is None:
+            medicamento.activo = True
+    
+    if any(m.activo is None for m in medicamentos):
+        db.commit()
+    
+    return medicamentos

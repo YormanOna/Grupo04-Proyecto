@@ -269,7 +269,7 @@ class RecepcionistaUser(BaseAuthUser):
 
     @task(8)
     def crear_paciente(self):
-        """Registra un nuevo paciente"""
+        """Registra un nuevo paciente - SOLO ADMINISTRADORES"""
         # Generar timestamp único para evitar duplicados
         timestamp = int(time.time() * 1000000)
         
@@ -291,7 +291,7 @@ class RecepcionistaUser(BaseAuthUser):
         with self.client.post(
             "/pacientes/",
             json=paciente_data,
-            name="Crear Paciente",
+            name="Crear Paciente (Admin)",
             catch_response=True,
             timeout=30
         ) as response:
@@ -303,6 +303,10 @@ class RecepcionistaUser(BaseAuthUser):
             elif response.status_code in [400, 409]:
                 # Si hay duplicado, simplemente marcar como éxito (es esperado bajo carga)
                 response.success()
+            elif response.status_code == 403:
+                # Sin permisos - es esperado si no es admin, marcar como éxito
+                response.success()
+                logger.debug(f"⚠️ Sin permisos para crear paciente (esperado para no-admins)")
             elif response.status_code in [0, 500, 503]:
                 # Timeout o servidor sobrecargado
                 response.success()

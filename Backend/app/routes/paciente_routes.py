@@ -21,8 +21,8 @@ def get_db():
         db.close()
 
 @router.post("/", response_model=PacienteOut)
-def create(payload: PacienteCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    """Crear paciente - Requiere autenticación"""
+def create(payload: PacienteCreate, db: Session = Depends(get_db), current_user: dict = Depends(admin_only)):
+    """Crear paciente - Solo administradores"""
     return create_paciente(db, payload)
 
 @router.get("/", response_model=List[PacienteOut])
@@ -47,8 +47,8 @@ def one(paciente_id: int, db: Session = Depends(get_db), current_user: dict = De
     return paciente
 
 @router.put("/{paciente_id}", response_model=PacienteOut)
-def update(paciente_id: int, payload: PacienteUpdate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    """Actualizar paciente - Requiere autenticación"""
+def update(paciente_id: int, payload: PacienteUpdate, db: Session = Depends(get_db), current_user: dict = Depends(admin_only)):
+    """Actualizar paciente - Solo administradores"""
     paciente = update_paciente(db, paciente_id, payload)
     if not paciente:
         raise HTTPException(404, "Paciente no encontrado")

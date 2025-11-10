@@ -4,6 +4,18 @@ from app.schemas.empleado_schema import EmpleadoCreate, EmpleadoUpdate
 from app.core.security import get_password_hash, verify_password
 
 def create_empleado(db: Session, payload: EmpleadoCreate):
+    # Manejar el estado - convertir de Pydantic enum a SQLAlchemy enum si es necesario
+    estado = EstadoEmpleado.ACTIVO  # Por defecto
+    if hasattr(payload, 'estado') and payload.estado is not None:
+        if isinstance(payload.estado, str):
+            # Si es string, convertir a enum
+            estado = EstadoEmpleado(payload.estado)
+        elif hasattr(payload.estado, 'value'):
+            # Si es un enum de Pydantic, obtener su valor y convertir
+            estado = EstadoEmpleado(payload.estado.value)
+        else:
+            estado = payload.estado
+    
     empleado = Empleado(
         nombre=payload.nombre,
         apellido=payload.apellido,
@@ -12,7 +24,7 @@ def create_empleado(db: Session, payload: EmpleadoCreate):
         email=payload.email,
         hashed_password=get_password_hash(payload.password),
         activo=payload.activo if hasattr(payload, 'activo') else True,  # Por defecto activo (no eliminado)
-        estado=payload.estado if hasattr(payload, 'estado') else EstadoEmpleado.ACTIVO  # Por defecto activo para login
+        estado=estado  # Estado validado
     )
     db.add(empleado)
     db.commit()
@@ -70,15 +82,15 @@ def authenticate_empleado(db: Session, email: str, password: str):
     Autenticar empleados.
     Validaciones:
     1. activo = True (no está eliminado lógicamente)
-    2. estado = 'Activo' (tiene permiso de acceso)
+    2. estado = 'Activo' (tiene permiso de acceso) o None (se asigna Activo automáticamente)
     """
     if not email:
         return None
     
+    # Buscar empleado activo (no eliminado)
     empleado = db.query(Empleado).filter(
         Empleado.email == email,
-        Empleado.activo == True,  # No eliminado
-        Empleado.estado == EstadoEmpleado.ACTIVO  # Estado activo para login
+        Empleado.activo == True  # No eliminado
     ).first()
     
     if not empleado:
@@ -87,4 +99,14 @@ def authenticate_empleado(db: Session, email: str, password: str):
         return None
     if not verify_password(password, empleado.hashed_password):
         return None
+    
+    # Si el estado es None o no es ACTIVO, actualizar a ACTIVO (migración automática)
+    if empleado.estado is None:
+        empleado.estado = EstadoEmpleado.ACTIVO
+        db.commit()
+        db.refresh(empleado)
+    elif empleado.estado != EstadoEmpleado.ACTIVO:
+        # Usuario con estado diferente a ACTIVO no puede iniciar sesión
+        return None
+    
     return empleado

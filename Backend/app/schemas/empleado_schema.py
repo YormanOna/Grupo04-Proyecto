@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, EmailStr, validator
+from typing import Optional, Union
 from datetime import datetime
 from enum import Enum
 
@@ -42,8 +42,20 @@ class EmpleadoUpdate(BaseModel):
 class EmpleadoOut(EmpleadoBase):
     id: int
     activo: bool
-    estado: EstadoEmpleadoEnum
+    estado: Union[EstadoEmpleadoEnum, str]
     fecha_eliminacion: Optional[datetime] = None
+
+    @validator('estado', pre=True)
+    def convert_estado(cls, v):
+        """Convierte el enum de SQLAlchemy a string si es necesario"""
+        if v is None:
+            return EstadoEmpleadoEnum.ACTIVO.value
+        # Si es un enum de SQLAlchemy, obtener su valor
+        if hasattr(v, 'value'):
+            return v.value
+        # Si ya es un string, devolverlo
+        return v
 
     class Config:
         orm_mode = True
+        use_enum_values = True
