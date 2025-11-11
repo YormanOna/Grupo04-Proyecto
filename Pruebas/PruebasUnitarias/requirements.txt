@@ -1,0 +1,47 @@
+# Dependencias para Pruebas Unitarias
+
+# Framework de testing
+pytest>=8.3.3,<9.0.0  # Compatible con locust 2.42.2
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-xdist==3.5.0  # Para ejecutar pruebas en paralelo
+
+# Mocking y fixtures
+pytest-mock==3.12.0
+faker==20.1.0  # Para generar datos de prueba realistas
+
+# HTTP testing (si se necesita)
+httpx==0.24.1
+requests>=2.32.2,<2.32.5  # Para pruebas de integración HTTP (compatible con locust)
+
+# Herramientas de calidad de código
+coverage==7.3.4
+pytest-html==4.1.1  # Reportes HTML bonitos
+
+# ============================================
+# Dependencias del Backend (versiones exactas)
+# ============================================
+# IMPORTANTE: Deben coincidir con Backend/requirements.txt
+
+# Framework web
+fastapi==0.95.2
+starlette==0.27.0
+uvicorn==0.22.0
+
+# Validación y configuración
+pydantic==1.10.11  # ⚠️ CRÍTICO: No usar 2.x
+email-validator==1.3.1
+python-dotenv==1.0.0
+
+# Base de datos
+SQLAlchemy==1.4.52
+PyMySQL==1.0.3
+
+# Autenticación
+python-jose==3.3.0
+passlib==1.7.4
+bcrypt==3.2.2
+
+# Utilidades
+python-dateutil==2.8.2
+python-multipart==0.0.6

@@ -10,10 +10,16 @@ import json
 
 def create_consulta(db: Session, payload: ConsultaCreate):
     from app.models.paciente import Paciente
+    from fastapi import HTTPException
+    
+    # Validar que el paciente exista
+    paciente = db.query(Paciente).filter(Paciente.id == payload.paciente_id).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail=f"Paciente con ID {payload.paciente_id} no encontrado")
     
     # Obtener cita para extraer paciente_id e historia_id
     historia_id = payload.historia_id
-    paciente_id = None
+    paciente_id = payload.paciente_id
     
     if payload.cita_id:
         cita = db.query(Cita).filter(Cita.id == payload.cita_id).first()
