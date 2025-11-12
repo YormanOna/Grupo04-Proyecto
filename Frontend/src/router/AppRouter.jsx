@@ -33,7 +33,8 @@ const AppRouter = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
+      {/* Ruta de login - sin redirect automático */}
+      <Route path="/login" element={<Login />} />
       
       <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/perfil" element={<PrivateRoute><MiPerfil /></PrivateRoute>} />

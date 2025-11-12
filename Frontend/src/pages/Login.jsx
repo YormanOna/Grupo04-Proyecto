@@ -1,22 +1,38 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' })
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
   const { login } = useAuth()
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+    // Limpiar error cuando el usuario empieza a escribir
+    if (error) setError('')
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    await login(form.email, form.password)
-    setIsLoading(false)
+    setError('') // Limpiar errores anteriores
+    
+    try {
+      await login(form.email, form.password, navigate)
+      // Si llega aquí, el login fue exitoso y la navegación se manejará en el contexto
+    } catch (error) {
+      // Capturar el mensaje de error para mostrarlo en el formulario también
+      const errorMessage = error.response?.data?.detail || 'Error al iniciar sesión'
+      setError(errorMessage)
+      console.log('Error de login capturado en componente:', errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -115,7 +131,17 @@ const Login = () => {
                 </div>
               </div>
 
-              
+              {/* Mensaje de error persistente - MUY VISIBLE */}
+              {error && (
+                <div className="bg-gradient-to-r from-red-50 to-red-100 border-4 border-red-600 text-red-800 px-6 py-5 rounded-xl flex items-start space-x-4 shadow-2xl shadow-red-500/50 animate-pulse">
+                  <svg className="w-8 h-8 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="font-bold text-base leading-relaxed">⚠️ {error}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Botón de login */}
               <button

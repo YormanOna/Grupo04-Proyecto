@@ -25,10 +25,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Solo redirigir si ya estamos autenticados y el token expiró
+    // NO redirigir durante el intento de login
     if (error.response?.status === 401) {
-      // Token expirado o inválido
-      localStorage.clear()
-      window.location.href = '/login'
+      const token = localStorage.getItem('token')
+      const isLoginRequest = error.config?.url?.includes('/auth/login')
+      
+      // Solo limpiar y redirigir si teníamos un token (sesión expirada)
+      // NO hacer nada si es un error de login (credenciales incorrectas)
+      if (token && !isLoginRequest) {
+        localStorage.clear()
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
