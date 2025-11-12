@@ -141,23 +141,24 @@ INSERT INTO farmacias (nombre_farmacia, direccion, telefono, farmaceutico_id) VA
 
 -- ============================================================
 -- 8. MEDICAMENTOS
+-- IMPORTANTE: Todos los medicamentos se crean con activo=1 (TRUE)
 -- ============================================================
-INSERT INTO medicamentos (nombre, principio_activo, concentracion, forma_farmaceutica, stock, farmacia_id, codigo_interno, nombre_comercial, categoria_terapeutica, indicaciones, dosis_recomendada, contraindicaciones, efectos_secundarios, contenido) VALUES
-('Paracetamol', 'Paracetamol', '500mg', 'Tableta', 500, 1, 'MED-001', 'Panadol', 'Analgésico', 'Dolor y fiebre', '500mg cada 6-8h', 'Hepatopatía severa', 'Náuseas, hepatotoxicidad', '20 tabletas'),
-('Ibuprofeno', 'Ibuprofeno', '400mg', 'Tableta', 450, 1, 'MED-002', 'Advil', 'AINE', 'Dolor e inflamación', '400mg cada 8h', 'Úlcera péptica', 'Gastritis, mareo', '30 tabletas'),
-('Amoxicilina', 'Amoxicilina', '500mg', 'Cápsula', 300, 1, 'MED-003', 'Amoxil', 'Antibiótico', 'Infecciones bacterianas', '500mg cada 8h', 'Alergia penicilinas', 'Diarrea, exantema', '21 cápsulas'),
-('Omeprazol', 'Omeprazol', '20mg', 'Cápsula', 400, 1, 'MED-004', 'Losec', 'Inhibidor bomba protones', 'Reflujo, gastritis', '20mg cada 12-24h', 'Hipersensibilidad', 'Cefalea, diarrea', '14 cápsulas'),
-('Losartán', 'Losartán', '50mg', 'Tableta', 350, 1, 'MED-005', 'Cozaar', 'Antihipertensivo', 'Hipertensión arterial', '50mg cada 24h', 'Embarazo', 'Mareo, hipotensión', '30 tabletas'),
-('Metformina', 'Metformina', '850mg', 'Tableta', 280, 1, 'MED-006', 'Glucophage', 'Antidiabético', 'Diabetes tipo 2', '850mg cada 12h', 'Acidosis metabólica', 'Diarrea, náuseas', '60 tabletas'),
-('Atorvastatina', 'Atorvastatina', '20mg', 'Tableta', 320, 1, 'MED-007', 'Lipitor', 'Hipolipemiante', 'Colesterol alto', '20mg cada 24h', 'Hepatopatía activa', 'Mialgia, cefalea', '30 tabletas'),
-('Salbutamol', 'Salbutamol', '100mcg', 'Inhalador', 150, 1, 'MED-008', 'Ventolin', 'Broncodilatador', 'Asma, broncoespasmo', '2 puff cada 4-6h', 'Taquiarritmias', 'Temblor, taquicardia', '200 dosis'),
-('Diclofenaco', 'Diclofenaco', '75mg', 'Ampolla', 200, 2, 'MED-009', 'Voltaren', 'AINE', 'Dolor moderado-severo', '75mg IM cada 12h', 'Úlcera activa', 'Gastritis, mareo', '3 ampollas'),
-('Ranitidina', 'Ranitidina', '150mg', 'Tableta', 380, 1, 'MED-010', 'Zantac', 'Anti-H2', 'Acidez, úlcera', '150mg cada 12h', 'Hipersensibilidad', 'Cefalea, estreñimiento', '20 tabletas'),
-('Cetirizina', 'Cetirizina', '10mg', 'Tableta', 420, 1, 'MED-011', 'Zyrtec', 'Antihistamínico', 'Alergias', '10mg cada 24h', 'Hipersensibilidad', 'Somnolencia', '10 tabletas'),
-('Azitromicina', 'Azitromicina', '500mg', 'Tableta', 180, 1, 'MED-012', 'Zithromax', 'Antibiótico', 'Infecciones respiratorias', '500mg cada 24h x 3d', 'Alergia macrólidos', 'Diarrea, náuseas', '3 tabletas'),
-('Clonazepam', 'Clonazepam', '2mg', 'Tableta', 250, 1, 'MED-013', 'Rivotril', 'Benzodiacepina', 'Ansiedad, convulsiones', '0.5-2mg cada 12h', 'Miastenia gravis', 'Somnolencia, ataxia', '30 tabletas'),
-('Furosemida', 'Furosemida', '40mg', 'Tableta', 310, 1, 'MED-014', 'Lasix', 'Diurético', 'Edema, hipertensión', '40mg cada 12-24h', 'Anuria', 'Hipopotasemia', '20 tabletas'),
-('Tramadol', 'Tramadol', '50mg', 'Cápsula', 220, 2, 'MED-015', 'Tramal', 'Analgésico opioide', 'Dolor moderado-severo', '50-100mg cada 6-8h', 'Epilepsia no controlada', 'Náuseas, mareo', '20 cápsulas');
+INSERT INTO medicamentos (nombre, principio_activo, concentracion, forma_farmaceutica, stock, farmacia_id, codigo_interno, nombre_comercial, categoria_terapeutica, indicaciones, dosis_recomendada, contraindicaciones, efectos_secundarios, contenido, activo) VALUES
+('Paracetamol', 'Paracetamol', '500mg', 'Tableta', 500, 1, 'MED-001', 'Panadol', 'Analgésico', 'Dolor y fiebre', '500mg cada 6-8h', 'Hepatopatía severa', 'Náuseas, hepatotoxicidad', '20 tabletas', 1),
+('Ibuprofeno', 'Ibuprofeno', '400mg', 'Tableta', 450, 1, 'MED-002', 'Advil', 'AINE', 'Dolor e inflamación', '400mg cada 8h', 'Úlcera péptica', 'Gastritis, mareo', '30 tabletas', 1),
+('Amoxicilina', 'Amoxicilina', '500mg', 'Cápsula', 300, 1, 'MED-003', 'Amoxil', 'Antibiótico', 'Infecciones bacterianas', '500mg cada 8h', 'Alergia penicilinas', 'Diarrea, exantema', '21 cápsulas', 1),
+('Omeprazol', 'Omeprazol', '20mg', 'Cápsula', 400, 1, 'MED-004', 'Losec', 'Inhibidor bomba protones', 'Reflujo, gastritis', '20mg cada 12-24h', 'Hipersensibilidad', 'Cefalea, diarrea', '14 cápsulas', 1),
+('Losartán', 'Losartán', '50mg', 'Tableta', 350, 1, 'MED-005', 'Cozaar', 'Antihipertensivo', 'Hipertensión arterial', '50mg cada 24h', 'Embarazo', 'Mareo, hipotensión', '30 tabletas', 1),
+('Metformina', 'Metformina', '850mg', 'Tableta', 280, 1, 'MED-006', 'Glucophage', 'Antidiabético', 'Diabetes tipo 2', '850mg cada 12h', 'Acidosis metabólica', 'Diarrea, náuseas', '60 tabletas', 1),
+('Atorvastatina', 'Atorvastatina', '20mg', 'Tableta', 320, 1, 'MED-007', 'Lipitor', 'Hipolipemiante', 'Colesterol alto', '20mg cada 24h', 'Hepatopatía activa', 'Mialgia, cefalea', '30 tabletas', 1),
+('Salbutamol', 'Salbutamol', '100mcg', 'Inhalador', 150, 1, 'MED-008', 'Ventolin', 'Broncodilatador', 'Asma, broncoespasmo', '2 puff cada 4-6h', 'Taquiarritmias', 'Temblor, taquicardia', '200 dosis', 1),
+('Diclofenaco', 'Diclofenaco', '75mg', 'Ampolla', 200, 2, 'MED-009', 'Voltaren', 'AINE', 'Dolor moderado-severo', '75mg IM cada 12h', 'Úlcera activa', 'Gastritis, mareo', '3 ampollas', 1),
+('Ranitidina', 'Ranitidina', '150mg', 'Tableta', 380, 1, 'MED-010', 'Zantac', 'Anti-H2', 'Acidez, úlcera', '150mg cada 12h', 'Hipersensibilidad', 'Cefalea, estreñimiento', '20 tabletas', 1),
+('Cetirizina', 'Cetirizina', '10mg', 'Tableta', 420, 1, 'MED-011', 'Zyrtec', 'Antihistamínico', 'Alergias', '10mg cada 24h', 'Hipersensibilidad', 'Somnolencia', '10 tabletas', 1),
+('Azitromicina', 'Azitromicina', '500mg', 'Tableta', 180, 1, 'MED-012', 'Zithromax', 'Antibiótico', 'Infecciones respiratorias', '500mg cada 24h x 3d', 'Alergia macrólidos', 'Diarrea, náuseas', '3 tabletas', 1),
+('Clonazepam', 'Clonazepam', '2mg', 'Tableta', 250, 1, 'MED-013', 'Rivotril', 'Benzodiacepina', 'Ansiedad, convulsiones', '0.5-2mg cada 12h', 'Miastenia gravis', 'Somnolencia, ataxia', '30 tabletas', 1),
+('Furosemida', 'Furosemida', '40mg', 'Tableta', 310, 1, 'MED-014', 'Lasix', 'Diurético', 'Edema, hipertensión', '40mg cada 12-24h', 'Anuria', 'Hipopotasemia', '20 tabletas', 1),
+('Tramadol', 'Tramadol', '50mg', 'Cápsula', 220, 2, 'MED-015', 'Tramal', 'Analgésico opioide', 'Dolor moderado-severo', '50-100mg cada 6-8h', 'Epilepsia no controlada', 'Náuseas, mareo', '20 cápsulas', 1);
 
 -- ============================================================
 -- 9. LOTES (Columnas: medicamento_id, numero_lote, fecha_ingreso, fecha_vencimiento, cantidad_inicial, cantidad_disponible, estado, proveedor)

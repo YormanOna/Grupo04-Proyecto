@@ -148,16 +148,6 @@ const MedicoList = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Acciones */}
-                <div className="pt-4 border-t border-gray-200 flex space-x-2">
-                  <button className="flex-1 px-4 py-2 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 rounded-lg text-sm font-medium transition-colors">
-                    Ver Perfil
-                  </button>
-                  <button className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">
-                    Ver Agenda
-                  </button>
-                </div>
               </div>
             </div>
           ))

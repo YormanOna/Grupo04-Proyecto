@@ -24,19 +24,20 @@ def create_medicamento(db: Session, payload: MedicamentoCreate):
     return m
 
 def list_medicamentos(db: Session):
-    from sqlalchemy import or_
-    # Incluir medicamentos activos y NULL (migración automática)
-    medicamentos = db.query(Medicamento).filter(
-        or_(Medicamento.activo == True, Medicamento.activo.is_(None))
-    ).all()
+    """
+    Listar todos los medicamentos (sin filtrar por activo para permitir visualización completa)
+    """
+    medicamentos = db.query(Medicamento).all()
     
-    # Corregir registros con activo=NULL
+    # Corregir registros con activo=NULL o activo=0 para que sean activos
     for medicamento in medicamentos:
-        if medicamento.activo is None:
+        if medicamento.activo is None or medicamento.activo == False:
+            print(f"⚠️ Medicamento {medicamento.id} - {medicamento.nombre} tiene activo={medicamento.activo}, corrigiendo a True")
             medicamento.activo = True
     
-    if any(m.activo is None for m in medicamentos):
+    if any(m.activo is None or m.activo == False for m in medicamentos):
         db.commit()
+        print(f"✅ Se actualizaron {len(medicamentos)} medicamentos a activo=True")
     
     return medicamentos
 

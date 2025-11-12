@@ -30,6 +30,7 @@ import { getPacientes } from '../services/pacienteService'
 import { getCitas } from '../services/citaService'
 import { getMedicos } from '../services/medicoService'
 import { getMedicamentos } from '../services/medicamentoService'
+import { getRecetas } from '../services/recetaService'
 
 const Dashboard = () => {
   const { user } = useAuth()
@@ -38,7 +39,8 @@ const Dashboard = () => {
     citas: 0,
     citasHoy: 0,
     medicos: 0,
-    medicamentos: 0
+    medicamentos: 0,
+    recetas: 0
   })
   const [upcomingCitas, setUpcomingCitas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -56,7 +58,7 @@ const Dashboard = () => {
   const loadStats = async () => {
     try {
       // Cargar datos según el rol
-      let pacientes = [], citas = [], medicos = [], medicamentos = []
+      let pacientes = [], citas = [], medicos = [], medicamentos = [], recetas = []
 
       if (isAdmin || isMedic || isNurse) {
         pacientes = await getPacientes()
@@ -69,6 +71,12 @@ const Dashboard = () => {
 
       if (isSuperAdmin || isPharmacist) {
         medicamentos = await getMedicamentos()
+      }
+
+      // Cargar recetas para médicos, farmacéuticos y admins
+      if (isMedic || isPharmacist || isAdmin || isSuperAdmin) {
+        recetas = await getRecetas()
+        console.log('📋 Recetas cargadas:', recetas.length)
       }
 
       // Filtrar citas de hoy
@@ -97,6 +105,12 @@ const Dashboard = () => {
       // Pacientes con póliza próxima a vencer
       const polizasPorVencer = pacientes.filter(p => p.estado_poliza === 'proxima_a_vencer')
 
+      // Medicamentos con stock bajo (menos de 10 unidades)
+      const stockBajo = medicamentos.filter(m => (m.stock || 0) < 10 && (m.stock || 0) > 0)
+      
+      // Medicamentos agotados
+      const medicamentosAgotados = medicamentos.filter(m => (m.stock || 0) === 0)
+
       // Obtener próximas citas (ordenadas por fecha)
       const proximasCitas = citas
         .filter(c => {
@@ -115,6 +129,9 @@ const Dashboard = () => {
         citasCanceladas: citasCanceladas.length,
         medicos: medicos.length,
         medicamentos: medicamentos.length,
+        recetas: recetas.length,
+        stockBajo: stockBajo.length,
+        medicamentosAgotados: medicamentosAgotados.length,
         pacientesConPoliza: pacientesConPoliza.length,
         polizasPorVencer: polizasPorVencer.length
       })
@@ -430,8 +447,8 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard icon={Pill} title="Inventario Total" value={stats.medicamentos} gradient="from-orange-600 via-orange-700 to-orange-800" link="/farmacia" />
             <StatCard icon={Package} title="Medicamentos" value={stats.medicamentos} gradient="from-blue-600 via-blue-700 to-blue-800" link="/farmacia" />
-            <StatCard icon={FileText} title="Recetas" value={stats.citas} gradient="from-green-600 via-green-700 to-green-800" link="/recetas" />
-            <StatCard icon={AlertCircle} title="Stock Bajo" value="0" gradient="from-red-600 via-red-700 to-red-800" link="/farmacia" />
+            <StatCard icon={FileText} title="Recetas" value={stats.recetas} gradient="from-green-600 via-green-700 to-green-800" link="/recetas" />
+            <StatCard icon={AlertCircle} title="Stock Bajo" value={stats.stockBajo || 0} gradient="from-red-600 via-red-700 to-red-800" link="/farmacia" />
           </div>
 
           {/* Accesos rápidos farmacia */}

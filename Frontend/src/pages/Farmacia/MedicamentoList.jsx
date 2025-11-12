@@ -29,11 +29,26 @@ const MedicamentoList = () => {
 
   const loadMedicamentos = async () => {
     try {
+      setLoading(true)
+      console.log('Cargando medicamentos...')
       const data = await getMedicamentos()
-      setMedicamentos(data)
+      console.log('Medicamentos recibidos:', data)
+      console.log('Tipo de datos:', typeof data)
+      console.log('Es array:', Array.isArray(data))
+      
+      if (Array.isArray(data)) {
+        setMedicamentos(data)
+        console.log('Total medicamentos cargados:', data.length)
+      } else {
+        console.error('Los datos no son un array:', data)
+        setMedicamentos([])
+        toast.error('Error: formato de datos incorrecto')
+      }
     } catch (error) {
       console.error('Error loading medications:', error)
-      toast.error('Error al cargar medicamentos')
+      console.error('Error completo:', error.response?.data || error.message)
+      toast.error('Error al cargar medicamentos: ' + (error.response?.data?.detail || error.message))
+      setMedicamentos([])
     } finally {
       setLoading(false)
     }
@@ -307,15 +322,9 @@ const MedicamentoList = () => {
                     </span>
                   </div>
 
-                  {/* Farmacia */}
-                  {medicamento.farmacia_id && (
-                    <div className="text-sm text-gray-500">
-                      <span>Farmacia ID: {medicamento.farmacia_id}</span>
-                    </div>
-                  )}
-
+                 
                   {/* Acciones - Solo para Administradores */}
-                  {isAdmin ? (
+                  {isAdmin && (
                     <div className="flex space-x-2 pt-4 border-t border-gray-200">
                       <button className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors">
                         <Edit className="w-4 h-4" />
@@ -325,13 +334,6 @@ const MedicamentoList = () => {
                         <Trash2 className="w-4 h-4" />
                         <span>Eliminar</span>
                       </button>
-                    </div>
-                  ) : isFarmaceutico && (
-                    <div className="pt-4 border-t border-gray-200">
-                      <div className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
-                        <Eye className="w-4 h-4" />
-                        <span>Vista de solo lectura - Farmacéutico</span>
-                      </div>
                     </div>
                   )}
                 </div>
