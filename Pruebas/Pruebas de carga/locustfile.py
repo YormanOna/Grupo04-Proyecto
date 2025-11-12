@@ -352,8 +352,8 @@ class RecepcionistaUser(BaseAuthUser):
             "medico_id": random.choice(self.medico_ids),  # Usar médico válido
             "encargado_id": self.user_data["id"],
             "motivo": random.choice(MOTIVOS_CONSULTA),
-            "estado": "Pendiente",
-            "tipo_cita": random.choice(["consulta_general", "control", "emergencia"])
+            "estado": "programada",  # Actualizado a nuevo enum
+            "tipo_cita": random.choice(["consulta", "seguimiento", "emergencia"])  # Actualizado a nuevo enum
         }
 
         with self.client.post(

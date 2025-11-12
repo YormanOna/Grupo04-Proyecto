@@ -16,7 +16,7 @@ const CitaForm = () => {
     paciente_id: '',
     medico_id: '',
     motivo: '',
-    tipo_cita: 'Consulta General'
+    tipo_cita: 'consulta'
   })
 
   // Estados auxiliares
@@ -133,7 +133,18 @@ const CitaForm = () => {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    // CRÍTICO: Solo procesar el submit si estamos en el paso 5 (Confirmación)
+    if (paso !== 5) {
+      console.log('⚠️ Submit bloqueado - No estamos en paso 5. Paso actual:', paso)
+      return
+    }
+    
+    console.log('✅ Iniciando creación de cita desde paso 5...')
     
     // Validaciones
     if (!form.paciente_id) {
@@ -178,19 +189,36 @@ const CitaForm = () => {
 
     setIsLoading(true)
     try {
-      // Construir la fecha completa con la hora de inicio
-      const fechaCompleta = new Date(form.fecha + 'T' + form.hora_inicio)
+      // Construir la fecha completa con zona horaria
+      // Crear objeto Date y convertir a ISO string completo
+      const [year, month, day] = form.fecha.split('-')
+      const [hours, minutes] = form.hora_inicio.split(':')
+      
+      const fechaCompleta = new Date(
+        parseInt(year),
+        parseInt(month) - 1, // Los meses en JS van de 0-11
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes),
+        0
+      )
       
       const citaData = {
         paciente_id: parseInt(form.paciente_id, 10),
         medico_id: parseInt(form.medico_id, 10),
-        fecha: fechaCompleta.toISOString(),
+        fecha: fechaCompleta.toISOString(), // Formato: 2025-11-28T09:00:00.000Z
         hora_inicio: form.hora_inicio,
         hora_fin: form.hora_fin,
         motivo: form.motivo || 'Consulta médica',
-        estado: 'Pendiente',
+        estado: 'programada',
         tipo_cita: form.tipo_cita
       }
+      
+      // Debug: Mostrar datos que se enviarán
+      console.log('📤 Datos de cita a enviar:', citaData)
+      console.log('📅 Fecha original:', form.fecha, 'Hora:', form.hora_inicio)
+      console.log('📅 Fecha ISO generada:', fechaCompleta.toISOString())
+      console.log('📋 Tipo de cita:', form.tipo_cita, '- Tipo:', typeof form.tipo_cita)
       
       const response = await createCita(citaData)
       toast.success('✅ Cita agendada exitosamente')
@@ -215,14 +243,41 @@ const CitaForm = () => {
       // Mostrar modal de QR
       setShowQRModal(true)
     } catch (error) {
-      const errorMsg = error.response?.data?.detail || 'Error al agendar la cita'
-      if (typeof errorMsg === 'object') {
-        const errores = Object.values(errorMsg).flat()
-        errores.forEach(err => toast.error(err))
-      } else {
-        toast.error(errorMsg)
+      console.error('❌ Error al crear cita:', error)
+      console.error('📄 Response completo:', error.response)
+      console.error('📋 Detalle del error:', error.response?.data)
+      
+      const errorDetail = error.response?.data?.detail
+      
+      // Manejar errores de validación de Pydantic (array de objetos)
+      if (Array.isArray(errorDetail)) {
+        console.error('🔍 Errores de validación:', errorDetail)
+        errorDetail.forEach(err => {
+          const campo = err.loc ? err.loc.join(' > ') : 'campo desconocido'
+          const mensaje = `${campo}: ${err.msg}`
+          toast.error(mensaje)
+          console.error(`  - ${mensaje}`)
+        })
+      } 
+      // Manejar errores simples (string)
+      else if (typeof errorDetail === 'string') {
+        toast.error(errorDetail)
       }
-      console.error('Error al crear cita:', error)
+      // Manejar errores como objeto con mensajes
+      else if (typeof errorDetail === 'object' && errorDetail !== null) {
+        const errores = Object.values(errorDetail).flat()
+        errores.forEach(err => {
+          if (typeof err === 'string') {
+            toast.error(err)
+          } else if (err.msg) {
+            toast.error(err.msg)
+          }
+        })
+      }
+      // Error genérico
+      else {
+        toast.error('Error al agendar la cita')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -234,8 +289,12 @@ const CitaForm = () => {
   }
 
   const avanzarPaso = () => {
-    if (paso === 1 && !form.paciente_id) {
+    if (paso === 1 && !selectedPaciente) {
       toast.error('Debe seleccionar un paciente')
+      return
+    }
+    if (paso === 1 && !form.tipo_cita) {
+      toast.error('Debe seleccionar el tipo de cita')
       return
     }
     if (paso === 2 && !especialidadSeleccionada) {
@@ -285,7 +344,7 @@ const CitaForm = () => {
         <div className="bg-white rounded-xl shadow-card p-4">
           <div className="flex items-center justify-between">
             {[
-              { num: 1, label: 'Paciente', icon: User },
+              { num: 1, label: 'Paciente y Tipo', icon: User },
               { num: 2, label: 'Especialidad', icon: Filter },
               { num: 3, label: 'Médico y Fecha', icon: Stethoscope },
               { num: 4, label: 'Horario', icon: Clock },
@@ -316,12 +375,12 @@ const CitaForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-card p-8">
-        {/* PASO 1: Seleccionar Paciente */}
+        {/* PASO 1: Seleccionar Paciente y Tipo de Cita */}
         {paso === 1 && (
           <div className="space-y-6">
             <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
               <User className="w-6 h-6 text-purple-600" />
-              <span>Paso 1: Seleccionar Paciente</span>
+              <span>Paso 1: Seleccionar Paciente y Tipo de Cita</span>
             </h3>
             
             <div className="relative">
@@ -401,6 +460,115 @@ const CitaForm = () => {
                 </div>
               )}
             </div>
+
+            {/* Selector de Tipo de Cita - Solo visible si hay paciente seleccionado */}
+            {selectedPaciente && (
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Tipo de Cita *
+                </label>
+                <div className="grid grid-cols-3 gap-4">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setForm({ ...form, tipo_cita: 'consulta' })
+                    }}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      form.tipo_cita === 'consulta'
+                        ? 'border-blue-500 bg-blue-50 shadow-lg scale-105'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center space-y-2">
+                      <Stethoscope className={`w-8 h-8 ${
+                        form.tipo_cita === 'consulta' ? 'text-blue-600' : 'text-gray-400'
+                      }`} />
+                      <div className="text-center">
+                        <p className={`font-semibold ${
+                          form.tipo_cita === 'consulta' ? 'text-blue-700' : 'text-gray-700'
+                        }`}>
+                          Consulta
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Consulta médica regular
+                        </p>
+                      </div>
+                      {form.tipo_cita === 'consulta' && (
+                        <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                      )}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setForm({ ...form, tipo_cita: 'seguimiento' })
+                    }}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      form.tipo_cita === 'seguimiento'
+                        ? 'border-green-500 bg-green-50 shadow-lg scale-105'
+                        : 'border-gray-200 hover:border-green-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center space-y-2">
+                      <Clock className={`w-8 h-8 ${
+                        form.tipo_cita === 'seguimiento' ? 'text-green-600' : 'text-gray-400'
+                      }`} />
+                      <div className="text-center">
+                        <p className={`font-semibold ${
+                          form.tipo_cita === 'seguimiento' ? 'text-green-700' : 'text-gray-700'
+                        }`}>
+                          Seguimiento
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Control o revisión
+                        </p>
+                      </div>
+                      {form.tipo_cita === 'seguimiento' && (
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      )}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setForm({ ...form, tipo_cita: 'emergencia' })
+                    }}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      form.tipo_cita === 'emergencia'
+                        ? 'border-red-500 bg-red-50 shadow-lg scale-105'
+                        : 'border-gray-200 hover:border-red-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center space-y-2">
+                      <AlertCircle className={`w-8 h-8 ${
+                        form.tipo_cita === 'emergencia' ? 'text-red-600' : 'text-gray-400'
+                      }`} />
+                      <div className="text-center">
+                        <p className={`font-semibold ${
+                          form.tipo_cita === 'emergencia' ? 'text-red-700' : 'text-gray-700'
+                        }`}>
+                          Emergencia
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Atención urgente
+                        </p>
+                      </div>
+                      {form.tipo_cita === 'emergencia' && (
+                        <CheckCircle2 className="w-5 h-5 text-red-600" />
+                      )}
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -590,7 +758,7 @@ const CitaForm = () => {
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border-2 border-purple-200">
               <h4 className="font-bold text-lg text-purple-900 mb-4">Resumen de la Cita</h4>
               
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <User className="w-5 h-5 text-purple-600 mt-0.5" />
                   <div>
@@ -640,6 +808,27 @@ const CitaForm = () => {
                     <p className="font-semibold text-gray-800">
                       {form.hora_inicio.slice(0,5)} - {form.hora_fin.slice(0,5)}
                     </p>
+                  </div>
+                </div>
+
+                {/* Tipo de Cita integrado en el resumen */}
+                <div className="pt-3 border-t-2 border-purple-200">
+                  <div className="flex items-start space-x-3">
+                    {form.tipo_cita === 'consulta' && <Stethoscope className="w-5 h-5 text-blue-600 mt-0.5" />}
+                    {form.tipo_cita === 'seguimiento' && <Clock className="w-5 h-5 text-green-600 mt-0.5" />}
+                    {form.tipo_cita === 'emergencia' && <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />}
+                    <div>
+                      <p className="text-sm text-gray-600">Tipo de Cita:</p>
+                      <div className={`inline-flex items-center px-3 py-1.5 rounded-lg font-semibold text-sm mt-1 ${
+                        form.tipo_cita === 'consulta' ? 'bg-blue-100 text-blue-700' :
+                        form.tipo_cita === 'seguimiento' ? 'bg-green-100 text-green-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {form.tipo_cita === 'consulta' ? '🩺 Consulta Regular' : 
+                         form.tipo_cita === 'seguimiento' ? '🔄 Seguimiento/Control' : 
+                         '🚨 Atención de Emergencia'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -703,7 +892,8 @@ const CitaForm = () => {
             </button>
           ) : (
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={isLoading}
               className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-medium flex items-center space-x-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >

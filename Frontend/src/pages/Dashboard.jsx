@@ -80,13 +80,16 @@ const Dashboard = () => {
       })
 
       // Citas pendientes de hoy
-      const citasPendientesHoy = citasHoy.filter(c => c.estado === 'Pendiente' || c.estado === 'Confirmada')
+      const citasPendientesHoy = citasHoy.filter(c => {
+        const estado = (c.estado || '').toLowerCase()
+        return estado === 'pendiente' || estado === 'programada' || estado === 'confirmada'
+      })
       
       // Citas completadas de hoy
-      const citasCompletadasHoy = citasHoy.filter(c => c.estado === 'Completada')
+      const citasCompletadasHoy = citasHoy.filter(c => (c.estado || '').toLowerCase() === 'completada')
       
       // Citas canceladas
-      const citasCanceladas = citas.filter(c => c.estado === 'Cancelada')
+      const citasCanceladas = citas.filter(c => (c.estado || '').toLowerCase() === 'cancelada')
       
       // Pacientes con póliza vigente
       const pacientesConPoliza = pacientes.filter(p => p.estado_poliza === 'vigente')
@@ -96,7 +99,10 @@ const Dashboard = () => {
 
       // Obtener próximas citas (ordenadas por fecha)
       const proximasCitas = citas
-        .filter(c => (c.estado === 'Pendiente' || c.estado === 'Confirmada') && new Date(c.fecha) >= new Date())
+        .filter(c => {
+          const estado = (c.estado || '').toLowerCase()
+          return (estado === 'pendiente' || estado === 'programada' || estado === 'confirmada') && new Date(c.fecha) >= new Date()
+        })
         .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
         .slice(0, 5)
 
@@ -506,8 +512,8 @@ const Dashboard = () => {
                           {cita.paciente_nombre?.[0]}{cita.paciente_apellido?.[0]}
                         </div>
                         <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                          cita.estado === 'Confirmada' ? 'bg-green-500' : 
-                          cita.estado === 'Pendiente' ? 'bg-yellow-500' : 
+                          (cita.estado || '').toLowerCase() === 'confirmada' ? 'bg-green-500' : 
+                          ((cita.estado || '').toLowerCase() === 'pendiente' || (cita.estado || '').toLowerCase() === 'programada') ? 'bg-yellow-500' : 
                           'bg-gray-400'
                         }`}></div>
                       </div>
@@ -549,11 +555,11 @@ const Dashboard = () => {
                         })}
                       </p>
                       <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                        cita.estado === 'Confirmada' ? 'bg-green-100 text-green-700' :
-                        cita.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-700' :
+                        (cita.estado || '').toLowerCase() === 'confirmada' ? 'bg-green-100 text-green-700' :
+                        ((cita.estado || '').toLowerCase() === 'pendiente' || (cita.estado || '').toLowerCase() === 'programada') ? 'bg-yellow-100 text-yellow-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
-                        {cita.estado}
+                        {cita.estado?.charAt(0).toUpperCase() + cita.estado?.slice(1).replace('_', ' ') || 'Sin estado'}
                       </span>
                     </div>
                   </Link>

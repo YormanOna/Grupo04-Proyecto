@@ -27,6 +27,38 @@ const ConsultaMedica = () => {
   const [vistaActiva, setVistaActiva] = useState('cola'); // 'cola', 'consulta', 'historia'
   const [tabActiva, setTabActiva] = useState('consulta'); // 'consulta', 'prescripcion', 'seguimiento'
 
+  // Función para formatear la edad según la edad del paciente
+  const formatearEdad = (edad, fechaNacimiento) => {
+    if (edad === null || edad === undefined) return 'N/A';
+    
+    // Si la edad es 0 o menor a 1 año, calculamos en meses o días
+    if (edad === 0 && fechaNacimiento) {
+      const hoy = new Date();
+      const fechaNac = new Date(fechaNacimiento);
+      
+      // Calcular meses
+      let meses = (hoy.getFullYear() - fechaNac.getFullYear()) * 12;
+      meses += hoy.getMonth() - fechaNac.getMonth();
+      
+      if (meses > 0) {
+        return `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+      }
+      
+      // Si tiene menos de 1 mes, calcular en días
+      const unDia = 24 * 60 * 60 * 1000; // milisegundos en un día
+      const dias = Math.floor((hoy - fechaNac) / unDia);
+      
+      if (dias === 0) {
+        return 'Recién nacido';
+      }
+      
+      return `${dias} ${dias === 1 ? 'día' : 'días'}`;
+    }
+    
+    // Para 1 año o más
+    return `${edad} ${edad === 1 ? 'año' : 'años'}`;
+  };
+
   // Datos de la consulta
   const [datosConsulta, setDatosConsulta] = useState({
     motivo_consulta: '',
@@ -478,23 +510,48 @@ const ConsultaMedica = () => {
         }
 
         try {
-          // Combinar fecha y hora en un datetime ISO
-          const fechaHoraISO = `${seguimiento.fecha}T${seguimiento.hora}:00`;
+          // Construir fecha ISO correctamente con zona horaria
+          const [year, month, day] = seguimiento.fecha.split('-');
+          const [hours, minutes] = seguimiento.hora.split(':');
+          
+          const fechaCompleta = new Date(
+            parseInt(year),
+            parseInt(month) - 1,
+            parseInt(day),
+            parseInt(hours),
+            parseInt(minutes || 0),
+            0
+          );
+          
+          // Calcular hora_fin (30 minutos después por defecto)
+          const fechaFin = new Date(fechaCompleta.getTime() + 30 * 60000);
+          const horaFin = `${String(fechaFin.getHours()).padStart(2, '0')}:${String(fechaFin.getMinutes()).padStart(2, '0')}:00`;
           
           const citaSeguimiento = {
             paciente_id: citaSeleccionada.paciente_id,
             medico_id: user.id,
-            fecha: fechaHoraISO,
-            hora_inicio: seguimiento.hora,
+            fecha: fechaCompleta.toISOString(),
+            hora_inicio: `${seguimiento.hora}${seguimiento.hora.split(':').length === 2 ? ':00' : ''}`,
+            hora_fin: horaFin,
             motivo: `Seguimiento - ${seguimiento.observaciones || 'Control de progreso'}`,
             estado: 'programada',
             tipo_cita: 'seguimiento'
           };
 
-          await citaService.crear(citaSeguimiento);
-          toast.success(`📅 Cita de seguimiento agendada para ${seguimiento.fecha}`);
-          
-          // Resetear formulario de seguimiento
+        console.log('📅 Creando cita de seguimiento:', citaSeguimiento);
+        console.log('📝 Validación de campos:');
+        console.log('  - paciente_id:', citaSeguimiento.paciente_id, typeof citaSeguimiento.paciente_id);
+        console.log('  - medico_id:', citaSeguimiento.medico_id, typeof citaSeguimiento.medico_id);
+        console.log('  - fecha:', citaSeguimiento.fecha, typeof citaSeguimiento.fecha);
+        console.log('  - hora_inicio:', citaSeguimiento.hora_inicio, typeof citaSeguimiento.hora_inicio);
+        console.log('  - hora_fin:', citaSeguimiento.hora_fin, typeof citaSeguimiento.hora_fin);
+        console.log('  - tipo_cita:', citaSeguimiento.tipo_cita, typeof citaSeguimiento.tipo_cita);
+        console.log('📡 VITE_API_URL:', import.meta.env.VITE_API_URL);
+        console.log('📡 Token presente:', !!localStorage.getItem('token'));
+        
+        const response = await citaService.createCita(citaSeguimiento);
+        console.log('✅ Respuesta del servidor:', response);
+        toast.success(`📅 Cita de seguimiento agendada para ${seguimiento.fecha}`);          // Resetear formulario de seguimiento
           setSeguimiento({
             programar: false,
             especialidad: '',
@@ -503,8 +560,13 @@ const ConsultaMedica = () => {
             observaciones: ''
           });
         } catch (error) {
-          console.error('Error al crear cita de seguimiento:', error);
-          toast.error('No se pudo agendar la cita de seguimiento');
+          console.error('❌ Error al crear cita de seguimiento:', error);
+          console.error('📋 Código de estado:', error.response?.status);
+          console.error('📋 Mensaje del servidor:', error.response?.data);
+          console.error('📋 URL que falló:', error.config?.url);
+          
+          const errorMsg = error.response?.data?.detail || 'No se pudo agendar la cita de seguimiento';
+          toast.error(errorMsg);
         }
       }
 
@@ -770,7 +832,7 @@ const ConsultaMedica = () => {
                           {cita.paciente?.nombre} {cita.paciente?.apellido}
                         </h3>
                         <p className="text-gray-600 text-sm">
-                          Cédula: {cita.paciente?.cedula} | Edad: {cita.paciente?.edad || 'N/A'} años
+                          Cédula: {cita.paciente?.cedula} | Edad: {formatearEdad(cita.paciente?.edad, cita.paciente?.fecha_nacimiento)}
                         </p>
                         {cita.paciente?.alergias && (
                           <p className="text-red-600 text-sm font-semibold flex items-center gap-1 mt-1">
@@ -838,7 +900,9 @@ const ConsultaMedica = () => {
               </div>
               <div>
                 <p className="text-gray-600">Edad</p>
-                <p className="font-semibold text-gray-800">{citaSeleccionada?.paciente?.edad || 'N/A'} años</p>
+                <p className="font-semibold text-gray-800">
+                  {formatearEdad(citaSeleccionada?.paciente?.edad, citaSeleccionada?.paciente?.fecha_nacimiento)}
+                </p>
               </div>
               <div>
                 <p className="text-gray-600">Género</p>

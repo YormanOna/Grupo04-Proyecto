@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { getCitas, deleteCita, updateCita } from '../../services/citaService'
 import { Link, useNavigate } from 'react-router-dom'
-import { Calendar, Plus, Search, Clock, User, Stethoscope, Edit, Trash2, CheckCircle, XCircle, Activity } from 'lucide-react'
+import { Calendar, Plus, Search, Clock, User, Stethoscope, Edit, Trash2, CheckCircle, XCircle, Activity, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 import { useAuth } from '../../context/AuthContext'
@@ -104,13 +104,57 @@ const CitaList = () => {
     }
   }
 
-  const getStatusBadge = (estado) => {
-    const badges = {
-      programada: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Programada' },
-      completada: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completada' },
-      cancelada: { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelada' },
+  const handleTipoCitaChange = async (id, newTipo, currentTipo) => {
+    // Confirmación especial para emergencias
+    if (newTipo === 'emergencia' && currentTipo !== 'emergencia') {
+      const result = await Swal.fire({
+        title: '⚠️ Cambiar a Emergencia',
+        text: 'Esta cita será marcada como EMERGENCIA y recibirá atención prioritaria.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, marcar como emergencia',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+      })
+
+      if (!result.isConfirmed) return
     }
-    const badge = badges[estado] || badges.programada
+
+    try {
+      await updateCita(id, { tipo_cita: newTipo })
+      
+      // Mensaje personalizado según el tipo
+      const mensajes = {
+        'consulta': 'Cambiado a: Consulta regular',
+        'seguimiento': 'Cambiado a: Seguimiento',
+        'emergencia': '⚠️ Cambiado a: EMERGENCIA - Atención prioritaria'
+      }
+      
+      toast.success(mensajes[newTipo] || 'Tipo de cita actualizado')
+      loadCitas()
+    } catch (error) {
+      console.error('Error updating tipo cita:', error)
+      toast.error('Error al actualizar tipo de cita')
+    }
+  }
+
+  const getStatusBadge = (estado) => {
+    const estadoLower = (estado || '').toLowerCase()
+    
+    const badges = {
+      'programada': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Programada' },
+      'pendiente': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pendiente' },
+      'confirmada': { bg: 'bg-green-100', text: 'text-green-800', label: 'Confirmada' },
+      'en_consulta': { bg: 'bg-purple-100', text: 'text-purple-800', label: 'En Consulta' },
+      'completada': { bg: 'bg-emerald-100', text: 'text-emerald-800', label: 'Completada' },
+      'cancelada': { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelada' },
+      'no_asistio': { bg: 'bg-orange-100', text: 'text-orange-800', label: 'No Asistió' }
+    }
+    
+    const badge = badges[estadoLower] || badges['programada']
+    
     return (
       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
         {badge.label}
@@ -119,8 +163,46 @@ const CitaList = () => {
   }
 
   const filteredCitas = citas.filter(c => {
-    const matchesSearch = c.id?.toString().includes(searchTerm)
-    const matchesStatus = filterStatus === 'todas' || c.estado === filterStatus
+    // Búsqueda por ID, nombre de paciente, médico o cédula
+    const searchLower = searchTerm.toLowerCase()
+    const matchesSearch = !searchTerm || (
+      c.id?.toString().includes(searchTerm) ||
+      c.paciente_nombre?.toLowerCase().includes(searchLower) ||
+      c.paciente_apellido?.toLowerCase().includes(searchLower) ||
+      c.paciente_cedula?.includes(searchTerm) ||
+      c.medico_nombre?.toLowerCase().includes(searchLower) ||
+      c.medico_apellido?.toLowerCase().includes(searchLower) ||
+      `${c.paciente_nombre} ${c.paciente_apellido}`.toLowerCase().includes(searchLower) ||
+      `${c.medico_nombre} ${c.medico_apellido}`.toLowerCase().includes(searchLower)
+    )
+    
+    // Filtro de estado (compatibilidad español/inglés)
+    const estadoLower = (c.estado || '').toLowerCase()
+    let matchesStatus = filterStatus === 'todas'
+    
+    if (!matchesStatus) {
+      switch(filterStatus.toLowerCase()) {
+        case 'pendiente':
+        case 'programada':
+          matchesStatus = estadoLower === 'pendiente' || estadoLower === 'programada'
+          break
+        case 'confirmada':
+          matchesStatus = estadoLower === 'confirmada'
+          break
+        case 'completada':
+          matchesStatus = estadoLower === 'completada'
+          break
+        case 'cancelada':
+          matchesStatus = estadoLower === 'cancelada'
+          break
+        case 'en_consulta':
+          matchesStatus = estadoLower === 'en_consulta'
+          break
+        default:
+          matchesStatus = estadoLower === filterStatus.toLowerCase()
+      }
+    }
+    
     return matchesSearch && matchesStatus
   })
 
@@ -134,6 +216,31 @@ const CitaList = () => {
 
   return (
     <div className="space-y-6">
+      {/* Alerta de Emergencias Activas */}
+      {citas.filter(c => 
+        (c.tipo_cita || '').toLowerCase() === 'emergencia' && 
+        ['programada', 'confirmada', 'en_consulta'].includes((c.estado || '').toLowerCase())
+      ).length > 0 && (
+        <div className="mb-6 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl p-4 shadow-2xl border-2 border-red-800 animate-pulse">
+          <div className="flex items-center space-x-4">
+            <div className="bg-white/20 p-3 rounded-xl">
+              <AlertCircle className="w-8 h-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold flex items-center space-x-2">
+                <span>CITAS DE EMERGENCIA ACTIVAS</span>
+              </h3>
+              <p className="text-red-100 text-sm mt-1">
+                Hay {citas.filter(c => 
+                  (c.tipo_cita || '').toLowerCase() === 'emergencia' && 
+                  ['programada', 'confirmada', 'en_consulta'].includes((c.estado || '').toLowerCase())
+                ).length} cita(s) de emergencia que requieren atención prioritaria
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
@@ -180,7 +287,7 @@ const CitaList = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar por ID, paciente o médico..."
+              placeholder="Buscar por ID, paciente, médico o cédula..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
@@ -192,16 +299,39 @@ const CitaList = () => {
             className="px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white font-medium"
           >
             <option value="todas">Todas las citas</option>
-            <option value="Pendiente">Pendientes</option>
-            <option value="Confirmada">Confirmadas</option>
-            <option value="Completada">Completadas</option>
-            <option value="Cancelada">Canceladas</option>
+            <option value="programada">Programadas</option>
+            <option value="confirmada">Confirmadas</option>
+            <option value="en_consulta">En Consulta</option>
+            <option value="completada">Completadas</option>
+            <option value="cancelada">Canceladas</option>
+            <option value="no_asistio">No Asistió</option>
           </select>
         </div>
+        
+        {/* Indicador de resultados */}
+        {(searchTerm || filterStatus !== 'todas') && (
+          <div className="mt-4 flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg px-4 py-2">
+            <p className="text-sm text-purple-700 font-medium">
+              Mostrando <span className="font-bold">{filteredCitas.length}</span> de <span className="font-bold">{citas.length}</span> citas
+              {searchTerm && <span className="ml-1">· Búsqueda: "<span className="font-semibold">{searchTerm}</span>"</span>}
+            </p>
+            {(searchTerm || filterStatus !== 'todas') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('')
+                  setFilterStatus('todas')
+                }}
+                className="text-xs text-purple-600 hover:text-purple-800 font-semibold hover:underline"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 shadow-lg border border-blue-100 hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
@@ -213,12 +343,27 @@ const CitaList = () => {
             </div>
           </div>
         </div>
+        
+        {/* Emergencias - Nueva tarjeta destacada */}
+        <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-6 shadow-lg border-2 border-red-300 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Emergencias</p>
+              <p className="text-3xl font-bold text-red-700">
+                {citas.filter(c => (c.tipo_cita || '').toLowerCase() === 'emergencia').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center animate-pulse">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
+        </div>
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-green-100 hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Completadas</p>
               <p className="text-3xl font-bold text-green-700">
-                {citas.filter(c => c.estado === 'Completada').length}
+                {citas.filter(c => (c.estado || '').toLowerCase() === 'completada').length}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
@@ -231,7 +376,10 @@ const CitaList = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Pendientes</p>
               <p className="text-3xl font-bold text-purple-700">
-                {citas.filter(c => c.estado === 'Pendiente' || c.estado === 'Confirmada').length}
+                {citas.filter(c => {
+                  const estado = (c.estado || '').toLowerCase()
+                  return estado === 'pendiente' || estado === 'programada' || estado === 'confirmada'
+                }).length}
               </p>
             </div>
             <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
@@ -239,16 +387,16 @@ const CitaList = () => {
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-6 shadow-lg border border-red-100 hover:shadow-xl transition-shadow">
+        <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-6 shadow-lg border border-orange-100 hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Canceladas</p>
-              <p className="text-3xl font-bold text-red-700">
-                {citas.filter(c => c.estado === 'Cancelada').length}
+              <p className="text-3xl font-bold text-orange-700">
+                {citas.filter(c => (c.estado || '').toLowerCase() === 'cancelada').length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
-              <XCircle className="w-6 h-6 text-red-600" />
+            <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
+              <XCircle className="w-6 h-6 text-orange-600" />
             </div>
           </div>
         </div>
@@ -276,7 +424,7 @@ const CitaList = () => {
                   Motivo
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Estado
+                  Estado y Tipo
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Acciones
@@ -285,12 +433,28 @@ const CitaList = () => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredCitas.length > 0 ? (
-                filteredCitas.map((cita) => (
-                  <tr key={cita.id} className="hover:bg-gray-50 transition-colors">
+                filteredCitas.map((cita) => {
+                  const isEmergencia = (cita.tipo_cita || '').toLowerCase() === 'emergencia'
+                  return (
+                  <tr 
+                    key={cita.id} 
+                    className={`transition-colors ${
+                      isEmergencia 
+                        ? 'bg-red-50 hover:bg-red-100 border-l-4 border-red-500 font-medium' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
                     <td className="px-6 py-4">
-                      <span className="font-mono text-sm font-semibold text-gray-800">
-                        #{cita.id}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono text-sm font-semibold text-gray-800">
+                          #{cita.id}
+                        </span>
+                        {isEmergencia && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white animate-pulse">
+                            URGENTE
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
@@ -333,7 +497,41 @@ const CitaList = () => {
                       </p>
                     </td>
                     <td className="px-6 py-4">
-                      {getStatusBadge(cita.estado)}
+                      <div className="flex flex-col space-y-1">
+                        {getStatusBadge(cita.estado)}
+                        
+                        {/* Tipo de Cita - Editable para médicos/admins */}
+                        {canManageCitas && cita.tipo_cita ? (
+                          <select
+                            value={cita.tipo_cita.toLowerCase()}
+                            onChange={(e) => handleTipoCitaChange(cita.id, e.target.value, cita.tipo_cita.toLowerCase())}
+                            className={`px-2 py-0.5 rounded text-xs font-medium cursor-pointer transition-all border-2 focus:outline-none focus:ring-2 ${
+                              isEmergencia 
+                                ? 'bg-red-600 text-white font-bold hover:bg-red-700 border-red-700 focus:ring-red-500' 
+                                : cita.tipo_cita.toLowerCase() === 'seguimiento'
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200 border-green-300 focus:ring-green-500'
+                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-300 focus:ring-blue-500'
+                            }`}
+                            title="Click para cambiar tipo de cita"
+                          >
+                            <option value="consulta">📋 Consulta</option>
+                            <option value="seguimiento">🔄 Seguimiento</option>
+                            <option value="emergencia">🚨 EMERGENCIA</option>
+                          </select>
+                        ) : cita.tipo_cita ? (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            isEmergencia 
+                              ? 'bg-red-600 text-white font-bold' 
+                              : cita.tipo_cita.toLowerCase() === 'seguimiento'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {cita.tipo_cita.toLowerCase() === 'consulta' && 'Consulta'}
+                            {cita.tipo_cita.toLowerCase() === 'seguimiento' && 'Seguimiento'}
+                            {cita.tipo_cita.toLowerCase() === 'emergencia' && 'EMERGENCIA'}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
@@ -385,7 +583,8 @@ const CitaList = () => {
                       </div>
                     </td>
                   </tr>
-                ))
+                  )
+                })
               ) : (
                 <tr>
                   <td colSpan="7" className="px-6 py-12 text-center">

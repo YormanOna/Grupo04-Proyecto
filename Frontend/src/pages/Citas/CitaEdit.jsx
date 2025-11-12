@@ -27,6 +27,7 @@ const CitaEdit = () => {
     hora_fin: '',
     motivo: '',
     estado: '',
+    tipo_cita: 'consulta',
     observaciones: ''
   });
 
@@ -53,7 +54,8 @@ const CitaEdit = () => {
         hora_inicio: citaData.hora_inicio || '',
         hora_fin: citaData.hora_fin || '',
         motivo: citaData.motivo || '',
-        estado: citaData.estado || 'Pendiente',
+        estado: citaData.estado || 'programada',
+        tipo_cita: citaData.tipo_cita || 'consulta',
         observaciones: citaData.observaciones || ''
       });
 
@@ -128,12 +130,47 @@ const CitaEdit = () => {
 
     try {
       setSubmitting(true);
-      await updateCita(id, formData);
+      
+      // Preparar datos para enviar (CitaUpdate no acepta paciente_id)
+      const updatePayload = {
+        fecha: formData.fecha ? new Date(formData.fecha + 'T' + (formData.hora_inicio || '08:00:00')).toISOString() : undefined,
+        hora_inicio: formData.hora_inicio || undefined,
+        hora_fin: formData.hora_fin || undefined,
+        motivo: formData.motivo || undefined,
+        estado: formData.estado || undefined,
+        medico_id: formData.medico_id ? parseInt(formData.medico_id) : undefined,
+        sala_asignada: formData.sala_asignada || undefined,
+        tipo_cita: formData.tipo_cita || undefined,
+        observaciones_cancelacion: formData.observaciones || undefined
+      };
+      
+      // Remover campos undefined
+      Object.keys(updatePayload).forEach(key => 
+        updatePayload[key] === undefined && delete updatePayload[key]
+      );
+      
+      console.log('📤 Enviando payload:', updatePayload);
+      
+      await updateCita(id, updatePayload);
       toast.success('Cita actualizada exitosamente');
       navigate('/citas');
     } catch (err) {
       console.error('Error al actualizar la cita:', err);
-      toast.error(err.response?.data?.detail || 'Error al actualizar la cita');
+      
+      // Manejar errores de validación de Pydantic
+      const errorDetail = err.response?.data?.detail;
+      
+      if (Array.isArray(errorDetail)) {
+        // Errores de validación de Pydantic
+        errorDetail.forEach(error => {
+          const field = error.loc?.[error.loc.length - 1] || 'campo';
+          toast.error(`${field}: ${error.msg}`);
+        });
+      } else if (typeof errorDetail === 'string') {
+        toast.error(errorDetail);
+      } else {
+        toast.error('Error al actualizar la cita');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -371,31 +408,145 @@ const CitaEdit = () => {
             </div>
           </div>
 
-          {/* Estado */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-orange-100">
-              <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl">
-                <Clock className="w-6 h-6 text-white" />
+          {/* Tipo de Cita y Estado */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Tipo de Cita */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-teal-100">
+                <div className="p-3 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl">
+                  <Stethoscope className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Tipo de Cita</h2>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Estado</h2>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Tipo de Cita *
+                </label>
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => handleChange({ target: { name: 'tipo_cita', value: 'consulta' } })}
+                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                      formData.tipo_cita === 'consulta'
+                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Stethoscope className={`w-6 h-6 ${
+                          formData.tipo_cita === 'consulta' ? 'text-blue-600' : 'text-gray-400'
+                        }`} />
+                        <div>
+                          <p className={`font-semibold ${
+                            formData.tipo_cita === 'consulta' ? 'text-blue-700' : 'text-gray-700'
+                          }`}>
+                            Consulta
+                          </p>
+                          <p className="text-xs text-gray-500">Consulta médica regular</p>
+                        </div>
+                      </div>
+                      {formData.tipo_cita === 'consulta' && (
+                        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleChange({ target: { name: 'tipo_cita', value: 'seguimiento' } })}
+                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                      formData.tipo_cita === 'seguimiento'
+                        ? 'border-green-500 bg-green-50 shadow-md'
+                        : 'border-gray-200 hover:border-green-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Clock className={`w-6 h-6 ${
+                          formData.tipo_cita === 'seguimiento' ? 'text-green-600' : 'text-gray-400'
+                        }`} />
+                        <div>
+                          <p className={`font-semibold ${
+                            formData.tipo_cita === 'seguimiento' ? 'text-green-700' : 'text-gray-700'
+                          }`}>
+                            Seguimiento
+                          </p>
+                          <p className="text-xs text-gray-500">Control o revisión</p>
+                        </div>
+                      </div>
+                      {formData.tipo_cita === 'seguimiento' && (
+                        <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleChange({ target: { name: 'tipo_cita', value: 'emergencia' } })}
+                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                      formData.tipo_cita === 'emergencia'
+                        ? 'border-red-500 bg-red-50 shadow-md'
+                        : 'border-gray-200 hover:border-red-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <AlertCircle className={`w-6 h-6 ${
+                          formData.tipo_cita === 'emergencia' ? 'text-red-600' : 'text-gray-400'
+                        }`} />
+                        <div>
+                          <p className={`font-semibold ${
+                            formData.tipo_cita === 'emergencia' ? 'text-red-700' : 'text-gray-700'
+                          }`}>
+                            Emergencia
+                          </p>
+                          <p className="text-xs text-gray-500">Atención urgente</p>
+                        </div>
+                      </div>
+                      {formData.tipo_cita === 'emergencia' && (
+                        <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                </div>
+              </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Estado de la Cita *
-              </label>
-              <select
-                name="estado"
-                value={formData.estado}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
-              >
-                <option value="Pendiente">Pendiente</option>
-                <option value="Confirmada">Confirmada</option>
-                <option value="Completada">Completada</option>
-                <option value="Cancelada">Cancelada</option>
-                <option value="No asistió">No asistió</option>
-              </select>
+
+            {/* Estado */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-orange-100">
+                <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Estado</h2>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Estado de la Cita *
+                </label>
+                <select
+                  name="estado"
+                  value={formData.estado}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
+                >
+                  <option value="programada">Programada</option>
+                  <option value="confirmada">Confirmada</option>
+                  <option value="en_consulta">En Consulta</option>
+                  <option value="completada">Completada</option>
+                  <option value="cancelada">Cancelada</option>
+                  <option value="no_asistio">No Asistió</option>
+                </select>
+              </div>
             </div>
           </div>
 
