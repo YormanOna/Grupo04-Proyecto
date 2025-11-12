@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { getCitas, deleteCita, updateCita } from '../../services/citaService'
 import { Link, useNavigate } from 'react-router-dom'
-import { Calendar, Plus, Search, Clock, User, Stethoscope, Edit, Trash2, CheckCircle, XCircle, Activity, AlertCircle } from 'lucide-react'
+import { Calendar, Plus, Search, Clock, User, Stethoscope, Edit, Trash2, CheckCircle, XCircle, Activity, AlertCircle, UserCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 import { useAuth } from '../../context/AuthContext'
@@ -147,6 +147,7 @@ const CitaList = () => {
       'programada': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Programada' },
       'pendiente': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pendiente' },
       'confirmada': { bg: 'bg-green-100', text: 'text-green-800', label: 'Confirmada' },
+      'en_espera': { bg: 'bg-indigo-100', text: 'text-indigo-800', label: 'En Espera' },
       'en_consulta': { bg: 'bg-purple-100', text: 'text-purple-800', label: 'En Consulta' },
       'completada': { bg: 'bg-emerald-100', text: 'text-emerald-800', label: 'Completada' },
       'cancelada': { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelada' },
@@ -188,6 +189,9 @@ const CitaList = () => {
           break
         case 'confirmada':
           matchesStatus = estadoLower === 'confirmada'
+          break
+        case 'en_espera':
+          matchesStatus = estadoLower === 'en_espera'
           break
         case 'completada':
           matchesStatus = estadoLower === 'completada'
@@ -301,6 +305,7 @@ const CitaList = () => {
             <option value="todas">Todas las citas</option>
             <option value="programada">Programadas</option>
             <option value="confirmada">Confirmadas</option>
+            <option value="en_espera">En Espera (Llegaron)</option>
             <option value="en_consulta">En Consulta</option>
             <option value="completada">Completadas</option>
             <option value="cancelada">Canceladas</option>
@@ -535,6 +540,15 @@ const CitaList = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
+                        {canManageCitas && (cita.estado === 'confirmada' || cita.estado === 'programada') && (
+                          <button 
+                            onClick={() => handleStatusChange(cita.id, 'en_espera')}
+                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" 
+                            title="Marcar Llegada"
+                          >
+                            <UserCheck className="w-4 h-4" />
+                          </button>
+                        )}
                         {canManageCitas && cita.estado !== 'completada' && (
                           <button 
                             onClick={() => handleStatusChange(cita.id, 'completada')}

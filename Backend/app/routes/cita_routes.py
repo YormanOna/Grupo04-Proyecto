@@ -27,7 +27,7 @@ def get_db():
 @router.post("/", response_model=CitaOut)
 def create(payload: CitaCreate, db: Session = Depends(get_db), current_user: dict = Depends(medical_staff)):
     """Crear cita médica con validaciones (RF-001)"""
-    return create_cita(db, payload)
+    return create_cita(db, payload, current_user["id"])
 
 @router.get("/", response_model=List[CitaOut])
 def all(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
@@ -148,7 +148,7 @@ def descargar_comprobante(cita_id: int, db: Session = Depends(get_db), current_u
 @router.put("/{cita_id}", response_model=CitaOut)
 def update(cita_id: int, payload: CitaUpdate, db: Session = Depends(get_db), current_user: dict = Depends(medical_staff)):
     """Actualizar cita con notificaciones (RF-001)"""
-    cita = update_cita(db, cita_id, payload)
+    cita = update_cita(db, cita_id, payload, current_user["id"])
     if not cita:
         raise HTTPException(404, "Cita no encontrada")
     return cita
@@ -161,7 +161,7 @@ def cancelar(cita_id: int, motivo: str = Body(..., embed=True, min_length=10), d
 @router.post("/{cita_id}/reprogramar", response_model=CitaOut)
 def reprogramar(cita_id: int, nueva_fecha: datetime = Body(...), nueva_hora_inicio: Optional[str] = Body(None), nueva_hora_fin: Optional[str] = Body(None), db: Session = Depends(get_db), current_user: dict = Depends(medical_staff)):
     """Reprograma una cita a nueva fecha/hora (RF-001)"""
-    return reprogramar_cita(db, cita_id, nueva_fecha, nueva_hora_inicio, nueva_hora_fin)
+    return reprogramar_cita(db, cita_id, nueva_fecha, nueva_hora_inicio, nueva_hora_fin, current_user["id"])
 
 @router.post("/{cita_id}/validar", response_model=CitaOut)
 def validar_cita(cita_id: int, db: Session = Depends(get_db), current_user: dict = Depends(medical_staff)):
@@ -171,7 +171,7 @@ def validar_cita(cita_id: int, db: Session = Depends(get_db), current_user: dict
 @router.delete("/{cita_id}")
 def remove(cita_id: int, db: Session = Depends(get_db), current_user: dict = Depends(admin_only)):
     """Eliminar cita - Solo administradores"""
-    result = delete_cita(db, cita_id)
+    result = delete_cita(db, cita_id, current_user["id"])
     if not result:
         raise HTTPException(404, "Cita no encontrada")
     return {"detail": "Cita eliminada exitosamente"}

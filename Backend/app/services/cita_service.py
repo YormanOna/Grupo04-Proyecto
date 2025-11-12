@@ -14,9 +14,10 @@ from app.core.websocket import manager
 from fastapi import HTTPException
 import asyncio
 from datetime import datetime, timedelta, date
+from app.services.auditoria_service import auditoria_service
 
 
-def create_cita(db: Session, payload: CitaCreate):
+def create_cita(db: Session, payload: CitaCreate, empleado_id: int = None):
     """
     Crea una cita con validaciones y notificaciones (RF-001)
     """
@@ -74,6 +75,37 @@ def create_cita(db: Session, payload: CitaCreate):
     db.add(c)
     db.commit()
     db.refresh(c)
+    
+    # Registrar en auditoría
+    if empleado_id:
+        try:
+            empleado = db.query(Empleado).filter(Empleado.id == empleado_id).first()
+            medico_nombre = "Por asignar"
+            if payload.medico_id:
+                medico_obj = db.query(Medico).filter(Medico.id == payload.medico_id).first()
+                if medico_obj and medico_obj.empleado:
+                    medico_nombre = f"{medico_obj.empleado.nombre} {medico_obj.empleado.apellido}"
+            
+            auditoria_service.registrar_accion(
+                db=db,
+                usuario_id=empleado_id,
+                usuario_nombre=f"{empleado.nombre} {empleado.apellido}" if empleado else "Sistema",
+                usuario_cargo=empleado.cargo if empleado else "Sistema",
+                accion="CREAR",
+                modulo="Citas",
+                descripcion=f"Nueva cita creada para {paciente.nombre} {paciente.apellido}",
+                tabla_afectada="citas",
+                registro_id=c.id,
+                datos_nuevos={
+                    "paciente": f"{paciente.nombre} {paciente.apellido}",
+                    "medico": medico_nombre,
+                    "fecha": c.fecha.strftime('%d/%m/%Y'),
+                    "estado": c.estado,
+                    "tipo": c.tipo_cita
+                }
+            )
+        except Exception as e:
+            print(f"Error registrando auditoría: {e}")
     
     # Enviar notificación WebSocket a todos los usuarios
     try:
@@ -221,7 +253,7 @@ def get_cita(db: Session, cita_id: int):
     
     return cita
 
-def update_cita(db: Session, cita_id: int, payload: CitaUpdate):
+def update_cita(db: Session, cita_id: int, payload: CitaUpdate, empleado_id: int = None):
     """
     Actualiza una cita con notificaciones (RF-001)
     Maneja cancelaciones y reprogramaciones con envío de emails
@@ -233,7 +265,7 @@ def update_cita(db: Session, cita_id: int, payload: CitaUpdate):
     # Obtener datos del paciente para notificaciones
     paciente = db.query(Paciente).filter(Paciente.id == cita.paciente_id).first()
     
-    # Guardar datos anteriores para notificaciones
+    # Guardar datos anteriores para notificaciones y auditoría
     estado_anterior = cita.estado
     fecha_anterior = cita.fecha
     
@@ -256,6 +288,53 @@ def update_cita(db: Session, cita_id: int, payload: CitaUpdate):
     
     db.commit()
     db.refresh(cita)
+    
+    # Registrar en auditoría
+    if empleado_id:
+        try:
+            empleado = db.query(Empleado).filter(Empleado.id == empleado_id).first()
+            cambios = []
+            datos_anteriores = {}
+            datos_nuevos = {}
+            
+            if es_cancelacion:
+                cambios.append(f"Estado: {estado_anterior} → cancelada")
+                datos_anteriores["estado"] = estado_anterior
+                datos_nuevos["estado"] = "cancelada"
+            elif es_reprogramacion:
+                cambios.append(f"Fecha: {fecha_anterior.strftime('%d/%m/%Y')} → {cita.fecha.strftime('%d/%m/%Y')}")
+                datos_anteriores["fecha"] = fecha_anterior.strftime('%d/%m/%Y')
+                datos_nuevos["fecha"] = cita.fecha.strftime('%d/%m/%Y')
+            elif estado_anterior != cita.estado:
+                cambios.append(f"Estado: {estado_anterior} → {cita.estado}")
+                datos_anteriores["estado"] = estado_anterior
+                datos_nuevos["estado"] = cita.estado
+            
+            # Agregar otros cambios detectados
+            if payload.medico_id is not None:
+                cambios.append(f"Médico actualizado")
+            if payload.hora_inicio is not None or payload.hora_fin is not None:
+                cambios.append(f"Horario modificado")
+            
+            detalles_cambios = ", ".join(cambios) if cambios else "Actualización de cita"
+            paciente_nombre = f"{paciente.nombre} {paciente.apellido}" if paciente else "Desconocido"
+            
+            auditoria_service.registrar_accion(
+                db=db,
+                usuario_id=empleado_id,
+                usuario_nombre=f"{empleado.nombre} {empleado.apellido}" if empleado else "Sistema",
+                usuario_cargo=empleado.cargo if empleado else "Sistema",
+                accion="ACTUALIZAR",
+                modulo="Citas",
+                descripcion=f"Cita actualizada para {paciente_nombre}",
+                tabla_afectada="citas",
+                registro_id=cita_id,
+                datos_anteriores=datos_anteriores if datos_anteriores else None,
+                datos_nuevos=datos_nuevos if datos_nuevos else None,
+                detalles_adicionales={"cambios": detalles_cambios}
+            )
+        except Exception as e:
+            print(f"Error registrando auditoría: {e}")
     
     # Enviar notificación WebSocket sobre actualización
     try:
@@ -322,14 +401,45 @@ def update_cita(db: Session, cita_id: int, payload: CitaUpdate):
     cita_actualizada = get_cita(db, cita_id)
     return cita_actualizada
 
-def delete_cita(db: Session, cita_id: int):
-    """Borrado lógico de cita"""
+def delete_cita(db: Session, cita_id: int, empleado_id: int):
+    """Borrado lógico de cita con registro de auditoría"""
     cita = get_cita(db, cita_id)
     if not cita:
         return None
+    
+    # Capturar información antes de eliminar para auditoría
+    paciente_nombre = f"{cita.paciente.nombre} {cita.paciente.apellido}" if cita.paciente else "Desconocido"
+    medico_nombre = f"{cita.medico.empleado.nombre} {cita.medico.empleado.apellido}" if cita.medico and cita.medico.empleado else "No asignado"
+    fecha_cita = cita.fecha.strftime("%d/%m/%Y") if cita.fecha else "N/A"
+    estado_cita = cita.estado
+    
     # Borrado lógico en lugar de físico
     cita.soft_delete()
     db.commit()
+    
+    # Registrar en auditoría
+    try:
+        empleado = db.query(Empleado).filter(Empleado.id == empleado_id).first()
+        auditoria_service.registrar_accion(
+            db=db,
+            usuario_id=empleado_id,
+            usuario_nombre=f"{empleado.nombre} {empleado.apellido}" if empleado else "Sistema",
+            usuario_cargo=empleado.cargo if empleado else "Sistema",
+            accion="ELIMINAR",
+            modulo="Citas",
+            descripcion=f"Cita eliminada de {paciente_nombre}",
+            tabla_afectada="citas",
+            registro_id=cita_id,
+            datos_anteriores={
+                "paciente": paciente_nombre,
+                "medico": medico_nombre,
+                "fecha": fecha_cita,
+                "estado": estado_cita
+            }
+        )
+    except Exception as e:
+        print(f"Error registrando auditoría: {e}")
+    
     return True
 
 
@@ -497,15 +607,15 @@ def cancelar_cita(db: Session, cita_id: int, motivo: str, usuario_id: int):
     if cita.estado == "completada":
         raise HTTPException(status_code=400, detail="No se puede cancelar una cita completada")
     
-    # Actualizar cita
+    # Actualizar cita con auditoría
     return update_cita(db, cita_id, CitaUpdate(
         estado="cancelada",
         observaciones_cancelacion=motivo
-    ))
+    ), empleado_id=usuario_id)
 
 
 def reprogramar_cita(db: Session, cita_id: int, nueva_fecha: datetime, 
-                     nueva_hora_inicio: str = None, nueva_hora_fin: str = None):
+                     nueva_hora_inicio: str = None, nueva_hora_fin: str = None, empleado_id: int = None):
     """
     Reprograma una cita a nueva fecha/hora (RF-001)
     """
@@ -546,9 +656,9 @@ def reprogramar_cita(db: Session, cita_id: int, nueva_fecha: datetime,
                 detail=f"El nuevo bloque horario no está disponible. Conflicto con cita #{conflicto.id}"
             )
     
-    # Reprogramar
+    # Reprogramar con auditoría
     return update_cita(db, cita_id, CitaUpdate(
         fecha=nueva_fecha,
         hora_inicio=nueva_hora_inicio,
         hora_fin=nueva_hora_fin
-    ))
+    ), empleado_id=empleado_id)

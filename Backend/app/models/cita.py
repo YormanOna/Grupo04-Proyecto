@@ -11,7 +11,7 @@ class Cita(Base, SoftDeleteMixin):
     hora_inicio = Column(String(10), nullable=True)  # Formato "09:00"
     hora_fin = Column(String(10), nullable=True)  # Formato "09:30"
     motivo = Column(String(255), nullable=True)
-    estado = Column(String(50), default="programada")  # programada, confirmada, en_consulta, completada, cancelada, no_asistio
+    estado = Column(String(50), default="programada")  # programada, confirmada, en_espera, en_consulta, completada, cancelada, no_asistio
     observaciones_cancelacion = Column(Text, nullable=True)  # Motivo de cancelación
     sala_asignada = Column(String(50), nullable=True)  # Sala o consultorio asignado
     tipo_cita = Column(String(50), default="consulta")  # consulta, seguimiento, emergencia

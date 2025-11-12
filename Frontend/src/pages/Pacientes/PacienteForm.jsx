@@ -582,7 +582,6 @@ const PacienteForm = ({ mode = 'create' }) => {
               <option value="">Seleccione</option>
               <option value="Masculino">Masculino</option>
               <option value="Femenino">Femenino</option>
-              <option value="Otro">Otro</option>
             </SelectField>
             <FormField
               label="Grupo Sanguíneo"

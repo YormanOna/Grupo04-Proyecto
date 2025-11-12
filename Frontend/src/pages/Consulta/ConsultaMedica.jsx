@@ -189,6 +189,19 @@ const ConsultaMedica = () => {
         return fechaConsulta === hoy;
       });
 
+      // Validar que exista consulta con signos vitales
+      if (consultasHoy.length === 0 || !consultasHoy.some(c => c.signos_vitales)) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Signos Vitales Requeridos',
+          text: 'Este paciente aún no tiene signos vitales registrados. La enfermera debe registrarlos antes de que pueda atender la consulta.',
+          confirmButtonColor: '#f59e0b',
+          confirmButtonText: 'Entendido'
+        });
+        setVistaActiva('lista'); // Volver a la lista
+        return; // No permitir acceso a la consulta
+      }
+
       if (consultasHoy.length > 0) {
         // Tomar la consulta más reciente (la última creada)
         const consulta = consultasHoy[consultasHoy.length - 1];
@@ -327,13 +340,13 @@ const ConsultaMedica = () => {
     const errores = validarConsulta();
     if (errores.length > 0) {
       errores.forEach(error => toast.error(error));
-      return;
+      return false; // Retornar false si hay errores de validación
     }
 
     // Validar que exista paciente_id
     if (!citaSeleccionada?.paciente_id) {
       toast.error('Error: No se puede guardar consulta sin paciente asociado');
-      return;
+      return false;
     }
 
     setGuardando(true);
@@ -354,6 +367,7 @@ const ConsultaMedica = () => {
         setConsultaActual(response.data);
         toast.success('Consulta guardada correctamente');
       }
+      return true; // Retornar true si se guardó correctamente
     } catch (error) {
       console.error('Error al guardar consulta:', error);
       const errorMsg = error.response?.data?.detail || 'Error al guardar la consulta';
@@ -363,6 +377,7 @@ const ConsultaMedica = () => {
       } else {
         toast.error(errorMsg);
       }
+      return false; // Retornar false si hubo error
     } finally {
       setGuardando(false);
     }
@@ -1214,22 +1229,19 @@ const ConsultaMedica = () => {
         </div>
 
         {/* Botones de navegación entre tabs */}
-        <div className="mt-6 flex gap-3 justify-between items-center">
+        <div className="mt-6 flex gap-3 justify-end items-center">
           <button
-            onClick={guardarConsulta}
+            onClick={async () => {
+              const guardadoExitoso = await guardarConsulta();
+              if (guardadoExitoso) {
+                setTabActiva('prescripcion');
+              }
+            }}
             disabled={guardando}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-semibold transition-colors"
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-semibold transition-all shadow-md"
           >
             <Save className="w-5 h-5" />
-            Guardar Consulta
-          </button>
-          
-          <button
-            onClick={() => setTabActiva('prescripcion')}
-            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-semibold transition-all shadow-md"
-          >
-            Siguiente: Prescripción
-            <Pill className="w-5 h-5" />
+            {guardando ? 'Guardando...' : 'Guardar y Siguiente'}
           </button>
         </div>
             </div>
@@ -1481,36 +1493,6 @@ const ConsultaMedica = () => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Botones de Acción Final */}
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            onClick={finalizarYPrescribir}
-            disabled={guardando}
-            className="flex-1 bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-lg hover:from-orange-700 hover:to-orange-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold transition-all shadow-lg"
-          >
-            {guardando ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Procesando...
-              </>
-            ) : (
-              <>
-                <Send className="w-5 h-5" />
-                Finalizar y Enviar Receta a Farmacia
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={finalizarSinReceta}
-            disabled={guardando}
-            className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-semibold transition-colors"
-          >
-            <Save className="w-5 h-5" />
-            Finalizar Sin Receta
-          </button>
         </div>
 
         {/* RF-003: Botones de Comprobante de Asistencia */}

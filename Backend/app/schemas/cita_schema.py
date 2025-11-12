@@ -17,6 +17,7 @@ class EstadoCitaEnum(str, Enum):
     """Estados de cita disponibles"""
     PROGRAMADA = "programada"
     CONFIRMADA = "confirmada"
+    EN_ESPERA = "en_espera"
     EN_CONSULTA = "en_consulta"
     COMPLETADA = "completada"
     CANCELADA = "cancelada"

@@ -43,15 +43,16 @@ const SignosVitales = () => {
         fecha: hoy
       });
       
-      // Filtrar solo citas pendientes y confirmadas (no canceladas ni completadas)
-      const citasPendientes = (response.data || []).filter(cita => 
-        cita.estado && !['Cancelada', 'Completada'].includes(cita.estado)
+      // Filtrar solo citas con estado "en_espera" (pacientes que ya llegaron)
+      // Solo estas citas pueden tener signos vitales tomados por enfermería
+      const citasEnEspera = (response.data || []).filter(cita => 
+        cita.estado === 'en_espera'
       );
       
-      setPacientesEnEspera(citasPendientes);
+      setPacientesEnEspera(citasEnEspera);
       
       // Verificar cuáles pacientes ya tienen signos vitales registrados
-      await verificarSignosVitales(citasPendientes);
+      await verificarSignosVitales(citasEnEspera);
     } catch (error) {
       console.error('Error al cargar pacientes:', error);
       toast.error('Error al cargar la lista de pacientes');
@@ -538,8 +539,9 @@ const SignosVitales = () => {
           ) : pacientesEnEspera.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-lg p-16 text-center">
               <User size={80} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">No hay pacientes en espera</h3>
-              <p className="text-gray-500">Los pacientes con citas para hoy aparecerán aquí</p>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">No hay pacientes que hayan llegado</h3>
+              <p className="text-gray-500">Solo se muestran los pacientes con citas confirmadas que ya están en la clínica (estado: en espera)</p>
+              <p className="text-gray-400 text-sm mt-2">El personal de recepción debe marcar la llegada del paciente</p>
             </div>
           ) : pacientesFiltrados.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-lg p-16 text-center">
