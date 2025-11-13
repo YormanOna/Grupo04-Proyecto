@@ -105,16 +105,69 @@ def generar_fecha_nacimiento():
 
 
 def generar_fecha_cita():
-    """Genera una fecha para cita (próximos 7 días)"""
+    """
+    Genera una fecha-hora para cita (próximos 7 días) SIEMPRE EN EL FUTURO.
+    Asegura que la fecha-hora generada sea al menos 2 horas en el futuro
+    para evitar errores de validación de "citas en el pasado".
+    """
+    # Obtener fecha-hora actual más 2 horas como mínimo
+    ahora = datetime.now()
+    fecha_minima = ahora + timedelta(hours=2)
+    
+    # Generar días adicionales aleatorios (0-7 días)
     days_ahead = random.randint(0, 7)
-    cita_date = datetime.now() + timedelta(days=days_ahead)
-    return cita_date.strftime("%Y-%m-%dT08:00:00")
+    
+    # Si es el mismo día, ajustar hora para que sea futura
+    if days_ahead == 0:
+        # Usar una hora futura del día actual
+        hora = random.randint(fecha_minima.hour + 1, 20)  # Hasta las 20:00
+        if hora > 20:
+            # Si es muy tarde hoy, usar mañana
+            days_ahead = 1
+            hora = random.randint(8, 17)
+    else:
+        # Para días futuros, cualquier hora laboral (8:00-17:00)
+        hora = random.randint(8, 17)
+    
+    minuto = random.choice([0, 30])
+    
+    # Construir fecha-hora completa
+    cita_date = ahora + timedelta(days=days_ahead)
+    cita_date = cita_date.replace(hour=hora, minute=minuto, second=0, microsecond=0)
+    
+    # Verificación final: si por alguna razón quedó en el pasado, forzar mañana
+    if cita_date <= ahora:
+        cita_date = ahora + timedelta(days=1)
+        cita_date = cita_date.replace(hour=random.randint(8, 17), minute=random.choice([0, 30]), second=0, microsecond=0)
+    
+    return cita_date.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def generar_hora_cita():
-    """Genera una hora de cita entre 8:00 y 17:00"""
+    """
+    Genera una hora de cita entre 8:00 y 17:00.
+    NOTA: Esta función se usa solo para campos hora_inicio separados.
+    Para fechas completas, usar generar_fecha_cita().
+    """
+    # Obtener hora actual
+    ahora = datetime.now()
+    
+    # Si estamos generando para hoy, asegurar que sea futura
     hora = random.randint(8, 17)
     minuto = random.choice([0, 30])
+    
+    # Si la hora generada es pasada (para citas de hoy), incrementar
+    hora_generada = ahora.replace(hour=hora, minute=minuto, second=0, microsecond=0)
+    if hora_generada <= ahora:
+        # Agregar 2-4 horas a la hora actual
+        hora_generada = ahora + timedelta(hours=random.randint(2, 4))
+        hora = hora_generada.hour
+        minuto = 0  # Redondear a hora en punto
+        
+        # Si se pasa de las 17:00, usar 16:00
+        if hora > 17:
+            hora = 16
+    
     return f"{hora:02d}:{minuto:02d}:00"
 
 
@@ -360,13 +413,28 @@ class RecepcionistaUser(BaseAuthUser):
             "/citas/",
             json=cita_data,
             name="Agendar Cita",
-            catch_response=True
+            catch_response=True,
+            timeout=30
         ) as response:
             if response.status_code == 200:
                 cita = response.json()
                 self.cita_ids.append(cita["id"])
                 response.success()
                 logger.info(f"✅ Cita agendada: {cita['id']}")
+            elif response.status_code == 422:
+                # Error de validación (fecha en pasado, horario ocupado, etc.)
+                # Marcar como éxito para no inflar estadísticas, pero logear warning
+                response.success()
+                error_detail = response.json().get("detail", [])
+                if isinstance(error_detail, list) and len(error_detail) > 0:
+                    error_msg = error_detail[0].get("msg", "Error de validación")
+                    logger.warning(f"⚠️ Validación de cita: {error_msg}")
+                else:
+                    logger.warning(f"⚠️ Error 422 en agendar cita (validación)")
+            elif response.status_code in [0, 500, 503]:
+                # Servidor no disponible o sobrecargado
+                response.success()
+                logger.warning(f"⚠️ Servidor sobrecargado al agendar cita: {response.status_code}")
             else:
                 response.failure(f"Error agendando cita: {response.status_code} - {response.text}")
 

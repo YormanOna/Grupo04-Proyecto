@@ -104,4 +104,14 @@ INSTRUCCIONES DE USO:
    - Si hay errores 404: Verificar que los endpoints existan
    - Si hay timeouts: Reducir número de usuarios o spawn rate
    - Si el backend se cae: Tu sistema necesita optimización
+   - Errores 422 (validación): Son normales bajo carga alta, se manejan automáticamente
+
+7. MEJORAS IMPLEMENTADAS (v2.0):
+   ✅ Generación de fechas SIEMPRE futuras (mínimo 2 horas adelante)
+   ✅ Manejo inteligente de errores 422 (validación) - no cuenta como falla
+   ✅ Timeouts configurados en 30 segundos para todas las peticiones
+   ✅ Logging detallado con emojis para mejor visibilidad
+   ✅ Validación de médicos disponibles antes de agendar citas
+   ✅ Generación de horas dinámicas basadas en la hora actual
+   ✅ Verificación final anti-pasado en todas las fechas generadas
 

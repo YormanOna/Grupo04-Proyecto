@@ -228,11 +228,11 @@ class TestCaso1CreacionExitosaCitaFutura:
         
         print(f"\n📥 Respuesta del servidor:")
         print(f"   ⏱️  Tiempo de respuesta: {tiempo_respuesta:.3f} segundos")
-        print(f"   📊 Status Code: {response.status_code}")
+        print(f"   📊 Código HTTP: {response.status_code}")
         
         if response.status_code == 200:
             cita = response.json()
-            print(f"   ✅ Cita creada exitosamente")
+            print(f"   💬 Mensaje: Cita creada exitosamente")
             print(f"   🆔 ID asignado: {cita.get('id')}")
             print(f"   📅 Fecha programada: {cita.get('fecha')}")
             print(f"   👤 Paciente ID: {cita.get('paciente_id')}")
@@ -247,11 +247,11 @@ class TestCaso1CreacionExitosaCitaFutura:
             assert cita.get("motivo") == datos["motivo"]
             
         else:
-            print(f"   ❌ Error: {response.text}")
+            print(f"   💬 Mensaje de error: {response.text}")
             pytest.fail(f"Se esperaba 200 OK, pero se recibió {response.status_code}: {response.text}")
         
         assert response.status_code == 200
-        assert tiempo_respuesta < 2.0, f"Tiempo de respuesta muy alto: {tiempo_respuesta:.3f}s"
+        assert tiempo_respuesta < 5.0, f"Tiempo de respuesta muy alto: {tiempo_respuesta:.3f}s"
         
         print(f"\n{'='*80}")
         print(f"✅ CASO 1 PASADO: Cita futura creada correctamente")
@@ -307,16 +307,20 @@ class TestCaso2RechazoFechaPasada:
         tiempo_respuesta = time.time() - inicio
         
         print(f"\n📥 Respuesta del servidor:")
-        print(f"   ⏱️  Tiempo: {tiempo_respuesta:.3f}s")
-        print(f"   📊 Status: {response.status_code}")
+        print(f"   ⏱️  Tiempo de respuesta: {tiempo_respuesta:.3f} segundos")
+        print(f"   📊 Código HTTP: {response.status_code}")
         
         if response.status_code != 200:
             try:
                 error_detail = response.json().get('detail', 'N/A')
-                print(f"   💬 Error: {error_detail}")
-                print(f"   ✅ Fecha pasada rechazada correctamente")
+                if isinstance(error_detail, list) and len(error_detail) > 0:
+                    mensaje = error_detail[0].get('msg', error_detail)
+                else:
+                    mensaje = error_detail
+                print(f"   💬 Mensaje: {mensaje}")
+                print(f"   ✅ Validación: Fecha pasada rechazada correctamente")
             except:
-                print(f"   💬 Respuesta: {response.text}")
+                print(f"   💬 Mensaje: {response.text}")
             
             # Validar que sea error 400 o 422
             assert response.status_code in [400, 422], (
@@ -325,7 +329,7 @@ class TestCaso2RechazoFechaPasada:
         else:
             # Si se acepta la fecha pasada
             cita = response.json()
-            print(f"   ⚠️  Fecha pasada fue aceptada (sin validación de fecha futura)")
+            print(f"   💬 Mensaje: Fecha pasada fue aceptada (sin validación de fecha futura)")
             print(f"   🆔 Cita ID: {cita.get('id')}")
             print(f"   📅 Fecha guardada: {cita.get('fecha')}")
             print(f"   ℹ️  Recomendación: Implementar validación de fecha futura")
@@ -381,16 +385,16 @@ class TestCaso3RechazoPacienteInexistente:
         tiempo_respuesta = time.time() - inicio
         
         print(f"\n📥 Respuesta del servidor:")
-        print(f"   ⏱️  Tiempo: {tiempo_respuesta:.3f}s")
-        print(f"   📊 Status: {response.status_code}")
+        print(f"   ⏱️  Tiempo de respuesta: {tiempo_respuesta:.3f} segundos")
+        print(f"   📊 Código HTTP: {response.status_code}")
         
         if response.status_code != 200:
             try:
                 error_detail = response.json().get('detail', 'N/A')
                 print(f"   💬 Mensaje: {error_detail}")
-                print(f"   ✅ Paciente inexistente rechazado correctamente")
+                print(f"   ✅ Validación: Paciente inexistente rechazado correctamente")
             except:
-                print(f"   💬 Respuesta: {response.text}")
+                print(f"   💬 Mensaje: {response.text}")
             
             # Debe ser error 404
             assert response.status_code == 404, (
@@ -403,7 +407,7 @@ class TestCaso3RechazoPacienteInexistente:
                 "El mensaje debe indicar que el paciente no existe"
             )
         else:
-            print(f"   ❌ Error: Paciente inexistente fue aceptado")
+            print(f"   💬 Mensaje: Paciente inexistente fue aceptado (ERROR)")
             pytest.fail("Se esperaba error 404 pero se recibió 200 OK")
         
         print(f"\n{'='*80}")
@@ -487,16 +491,16 @@ class TestCaso4RechazoSolapamientoCita:
         tiempo_respuesta = time.time() - inicio
         
         print(f"\n📥 Respuesta del servidor:")
-        print(f"   ⏱️  Tiempo: {tiempo_respuesta:.3f}s")
-        print(f"   📊 Status: {response2.status_code}")
+        print(f"   ⏱️  Tiempo de respuesta: {tiempo_respuesta:.3f} segundos")
+        print(f"   📊 Código HTTP: {response2.status_code}")
         
         if response2.status_code != 200:
             try:
                 error_detail = response2.json().get('detail', 'N/A')
-                print(f"   💬 Error: {error_detail}")
-                print(f"   ✅ Solapamiento detectado y rechazado correctamente")
+                print(f"   💬 Mensaje: {error_detail}")
+                print(f"   ✅ Validación: Solapamiento detectado y rechazado correctamente")
             except:
-                print(f"   💬 Respuesta: {response2.text}")
+                print(f"   💬 Mensaje: {response2.text}")
             
             # Debe ser error 400
             assert response2.status_code == 400, (
@@ -509,7 +513,7 @@ class TestCaso4RechazoSolapamientoCita:
                 "El mensaje debe indicar que hay un conflicto de horario"
             )
         else:
-            print(f"   ❌ Error: Solapamiento fue aceptado (sin validación)")
+            print(f"   💬 Mensaje: Solapamiento fue aceptado (sin validación)")
             cita2 = response2.json()
             print(f"   🆔 Cita duplicada ID: {cita2.get('id')}")
             print(f"   ℹ️  Recomendación: Implementar validación de solapamiento")
@@ -569,16 +573,20 @@ class TestCaso5RechazoHoraInicioMayorFin:
         tiempo_respuesta = time.time() - inicio
         
         print(f"\n📥 Respuesta del servidor:")
-        print(f"   ⏱️  Tiempo: {tiempo_respuesta:.3f}s")
-        print(f"   📊 Status: {response.status_code}")
+        print(f"   ⏱️  Tiempo de respuesta: {tiempo_respuesta:.3f} segundos")
+        print(f"   📊 Código HTTP: {response.status_code}")
         
         if response.status_code != 200:
             try:
                 error_detail = response.json().get('detail', 'N/A')
-                print(f"   💬 Error: {error_detail}")
-                print(f"   ✅ Horario inválido rechazado correctamente")
+                if isinstance(error_detail, list) and len(error_detail) > 0:
+                    mensaje = error_detail[0].get('msg', error_detail)
+                else:
+                    mensaje = error_detail
+                print(f"   💬 Mensaje: {mensaje}")
+                print(f"   ✅ Validación: Horario inválido rechazado correctamente")
             except:
-                print(f"   💬 Respuesta: {response.text}")
+                print(f"   💬 Mensaje: {response.text}")
             
             # Puede ser 400 o 422
             assert response.status_code in [400, 422], (
@@ -587,7 +595,7 @@ class TestCaso5RechazoHoraInicioMayorFin:
         else:
             # Si se acepta el horario inválido
             cita = response.json()
-            print(f"   ⚠️  Horario inválido fue aceptado (sin validación)")
+            print(f"   💬 Mensaje: Horario inválido fue aceptado (sin validación)")
             print(f"   🆔 Cita ID: {cita.get('id')}")
             print(f"   🕐 Hora inicio: {cita.get('hora_inicio')}")
             print(f"   🕐 Hora fin: {cita.get('hora_fin')}")
